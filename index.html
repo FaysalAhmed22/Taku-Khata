@@ -2,20 +2,13 @@
 <html lang="bn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0E7656">
-<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
-
-<!-- Firebase (অনলাইনে হিসাব সেভ করার জন্য) -->
+<style>[hidden]{display:none!important}body{margin:0}</style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* ============================================================
-   ↓↓↓ এখানে Firebase কনসোল থেকে পাওয়া firebaseConfig বসান ↓↓↓
-   (Project settings → Your apps → Web app → SDK setup and configuration → Config)
-   যতক্ষণ "PASTE_..." থাকবে, অ্যাপ শুধু ফোনের ব্রাউজারে হিসাব রাখবে।
-   ============================================================ */
 window.TAKU_FIREBASE = {
   apiKey: "AIzaSyBHNPIz1yggKk5hKn9jOOFul_CKCOO2HI0",
   authDomain: "taku-khata.firebaseapp.com",
@@ -216,7 +209,29 @@ label.btn{display:inline-block;text-align:center}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
-.tabbar nav{max-width:460px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 76px 1fr 1fr;align-items:center;height:64px}
+.tabbar nav{max-width:460px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 68px 1fr 1fr 1fr;align-items:center;height:64px}
+/* loans */
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg.three button{padding:9px 4px;font-size:14px}
+.loan{border-top:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:8px}
+.loan:first-child{border-top:0;padding-top:4px}
+.loan-top{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center}
+.loan-top .name{font-weight:700;min-width:0;overflow-wrap:anywhere;line-height:1.25}
+.loan-top small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.loan-top .amt{text-align:right;font-family:var(--f-display);font-weight:700;font-size:18px}
+.loan.took .loan-top .amt{color:var(--danger)} .loan.gave .loan-top .amt{color:var(--ok)} .loan.done .loan-top .amt{color:var(--muted)}
+.due{align-self:flex-start;font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.due.ok{background:var(--brand-soft);border-color:transparent}
+.due.warn{background:var(--warn-soft);border-color:var(--warn)}
+.due.bad{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+.loan .track{height:7px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.loan .track i{display:block;height:100%;border-radius:999px;background:var(--ok)}
+.loan .note{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.loan-acts{display:flex;gap:8px;flex-wrap:wrap}
+.loan-acts .btn{padding:8px 12px;font-size:14px;text-decoration:none}
+.remind{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--warn-soft);font-size:14px;line-height:1.45}
+.remind.bad{background:var(--danger-soft)}
+.remind+.remind{margin-top:8px}
 .tab{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0}
 .tab svg{width:22px;height:22px}
 .tab[aria-current="page"]{color:var(--brand)}
@@ -317,6 +332,9 @@ const monthName=ym=>{const [y,m]=ym.split('-').map(Number);return BN_MONTHS[m-1]
 const shiftYm=(ym,d)=>{const [y,m]=ym.split('-').map(Number);return ymOf(new Date(y,m-1+d,1))};
 const hashStr=s=>{let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))|0;return Math.abs(h)};
 const pick=(arr,seed)=>arr[seed%arr.length];
+const addDays=(s,n)=>{const d=new Date(s+'T00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const daysTo=s=>Math.round((new Date(s+'T00:00')-new Date(todayStr()+'T00:00'))/864e5);
+const fDate=s=>new Date(s+'T00:00').toLocaleDateString('bn-BD',{day:'numeric',month:'long',year:'numeric'});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 async function hashPin(phone,pin){
   const s='taku:'+phone+':'+pin;
@@ -402,10 +420,10 @@ const Store={
     return this.q[k];
   }
 };
-const acctKey=p=>'acct_'+p, monKey=(p,ym)=>'exp_'+p+'_'+ym;
+const acctKey=p=>'acct_'+p, monKey=(p,ym)=>'exp_'+p+'_'+ym, loanKey=p=>'loan_'+p;
 
 /* ================= state ================= */
-const S={acct:null,phone:null,cur:null,curYm:ymOf(new Date()),view:'home',repYm:ymOf(new Date()),rep:null,authTab:'login',qi:hashStr(todayStr())%QUOTES.length,armed:null,draft:null};
+const S={acct:null,phone:null,cur:null,curYm:ymOf(new Date()),view:'home',repYm:ymOf(new Date()),rep:null,authTab:'login',qi:hashStr(todayStr())%QUOTES.length,armed:null,draft:null,loans:null,loanTab:'took',ld:null,pay:null};
 
 /* ================= calculations ================= */
 function calc(acct,month,ym){
@@ -478,6 +496,7 @@ const IC={
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
   report:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   tips:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>',
+  loans:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>',
   settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
 };
 
@@ -575,9 +594,10 @@ async function onAuthSubmit(e){
   enter(phone,acct,true);
 }
 async function enter(phone,acct,fresh){
-  let cur;
-  try{cur=await Store.get(monKey(phone,ymOf(new Date())))}
+  let cur,loans;
+  try{[cur,loans]=await Promise.all([Store.get(monKey(phone,ymOf(new Date()))),Store.get(loanKey(phone))])}
   catch(e){console.error(e);S.acct=null;return renderAuth(fbErr(e))}
+  S.loans=loans&&Array.isArray(loans.list)?loans:{list:[]};
   S.phone=phone;S.acct=acct;S.curYm=ymOf(new Date());S.repYm=S.curYm;
   S.cur=cur||{items:[]};
   if(!S.cur.items)S.cur.items=[];
@@ -611,6 +631,13 @@ async function makeDemo(){
   add(t,'travel',80,'বাস');add(t,'tea',40,'সকালের চা');add(t,'cig',60,'');add(t,'food',150,'দুপুরের খাবার');add(t,'adda',100,'বিকালের আড্ডা');
   await Store.set(acctKey(phone),acct);
   await Store.set(monKey(phone,ym),{items});
+  const L=(type,person,amt,ago,dueIn,note,paid)=>({id:uid(),type,person,phone:'',amt,d:addDays(t,-ago),due:dueIn==null?'':addDays(t,dueIn),note,pays:paid?[{id:uid(),amt:paid,d:addDays(t,-2)}]:[],t:Date.now()});
+  await Store.set(loanKey(phone),{list:[
+    L('took','রহিম ভাই',2000,10,2,'মাসের শেষে টান পড়েছিল',500),
+    L('gave','সাকিব',1500,20,-3,'ওর মোবাইল কেনার সময়'),
+    L('took','অফিসের রাসেল',500,4,12,'দুপুরের খাবারের টাকা'),
+    L('gave','ছোট ভাই',800,6,null,'')
+  ]});
   enter(phone,acct);
 }
 
@@ -619,12 +646,12 @@ function render(){
   if(!S.acct)return renderAuth();
   renderTabbar();
   const v=S.view;
-  if(v==='home')renderHome();else if(v==='report')renderReport();else if(v==='tips')renderTips();else renderSettings();
+  if(v==='home')renderHome();else if(v==='report')renderReport();else if(v==='loans')renderLoans();else if(v==='tips')renderTips();else renderSettings();
 }
 function renderTabbar(){
   const tb=$('#tabbar');tb.hidden=false;
   const t=(k,l)=>`<button class="tab" data-act="nav" data-v="${k}" ${S.view===k?'aria-current="page"':''}>${IC[k]}<span>${l}</span></button>`;
-  tb.innerHTML=`<nav aria-label="প্রধান মেনু">${t('home','হোম')}${t('report','হিসাব')}<button class="fab" data-act="add" aria-label="খরচ যোগ করুন">+</button>${t('tips','টিপস')}${t('settings','প্রোফাইল')}</nav>`;
+  tb.innerHTML=`<nav aria-label="প্রধান মেনু">${t('home','হোম')}${t('report','হিসাব')}<button class="fab" data-act="add" aria-label="খরচ যোগ করুন">+</button>${t('loans','ধার')}${t('tips','টিপস')}${t('settings','প্রোফাইল')}</nav>`;
 }
 function itemRow(i,showDate){
   const c=CAT[i.cat]||CAT.other;const armed=S.armed===i.id;
@@ -666,6 +693,7 @@ function renderHome(){
     </div>
     ${c.income?(c.projSave>=c.savings?`<p class="alert-line good">এভাবে চললে সঞ্চয়ের লক্ষ্য পূরণ হবে। সাবাশ!</p>`:`<p class="alert-line bad">এই হারে চললে লক্ষ্যের চেয়ে ${tk(c.savings-c.projSave)} কম জমবে। দৈনিক খরচ একটু কমান।</p>`):''}
   </section>
+  ${loanReminders()}
   <section class="card">
     <div class="sec-head"><h2>আজ কোথায় কত গেল</h2><span class="muted num">${tk(sum(c.todayItems))}</span></div>
     <div class="list">${todayList.length?todayList.map(i=>itemRow(i)).join(''):'<p class="empty">আজ এখনো কিছু লেখা হয়নি। নিচের + বাটনে চাপ দিয়ে খরচ যোগ করুন।</p>'}</div>
@@ -804,6 +832,170 @@ async function onSettingsSubmit(e){
   toast('সেভ হয়েছে');renderSettings();
 }
 
+/* ---------- loans (ধার-দেনা) ---------- */
+/* loan: {id,type:'took'|'gave',person,phone,amt,d,due,note,pays:[{id,amt,d}],t,doneAt?} */
+const loanList=()=>(S.loans&&S.loans.list)||[];
+const loanLeft=l=>Math.max(0,(Number(l.amt)||0)-sum(l.pays||[]));
+const loanOpen=l=>loanLeft(l)>0;
+const saveLoans=()=>Store.set(loanKey(S.phone),S.loans);
+function dueInfo(l){
+  if(!loanOpen(l))return {cls:'',txt:'শোধ হয়ে গেছে'+(l.doneAt?' · '+fDate(l.doneAt):'')};
+  const lbl=l.type==='took'?'ফেরত দেওয়ার তারিখ':'ফেরত পাওয়ার তারিখ';
+  if(!l.due)return {cls:'',txt:lbl+' ঠিক করা নেই'};
+  const n=daysTo(l.due),base=lbl+': '+fDate(l.due)+' · ';
+  if(n<0)return {cls:'bad',n,txt:base+bn(-n)+' দিন পার হয়ে গেছে!'};
+  if(n===0)return {cls:'bad',n,txt:base+'আজই!'};
+  if(n<=3)return {cls:'warn',n,txt:base+bn(n)+' দিন বাকি'};
+  return {cls:'ok',n,txt:base+bn(n)+' দিন বাকি'};
+}
+function loanMsg(l,n){
+  const who=esc(l.person),amt=tk(loanLeft(l));
+  if(l.type==='took'){
+    if(n<0)return `<b>${who}</b>-কে ${amt} ফেরত দেওয়ার কথা ছিল ${bn(-n)} দিন আগে! কথা রাখো, না হলে টাকু খুব রাগ করবে।`;
+    if(n===0)return `আজই <b>${who}</b>-কে ${amt} ফেরত দেওয়ার দিন। ভুলে যেও না কিন্তু!`;
+    return `আর ${bn(n)} দিন পর <b>${who}</b>-কে ${amt} ফেরত দিতে হবে। এখন থেকেই টাকাটা সরিয়ে রাখো।`;
+  }
+  if(n<0)return `<b>${who}</b> এখনো ${amt} ফেরত দেয়নি, তারিখ ${bn(-n)} দিন পার! একটা ফোন দাও তো।`;
+  if(n===0)return `আজ <b>${who}</b>-এর কাছ থেকে ${amt} ফেরত পাওয়ার দিন। মনে করিয়ে দাও।`;
+  return `আর ${bn(n)} দিন পর <b>${who}</b>-এর কাছ থেকে ${amt} ফেরত পাবে।`;
+}
+function dueSoon(){
+  return loanList().filter(l=>loanOpen(l)&&l.due&&daysTo(l.due)<=3).sort((a,b)=>a.due.localeCompare(b.due));
+}
+function remindRows(arr){
+  return arr.map(l=>{const n=daysTo(l.due),bad=n<=0;
+    return `<div class="remind ${bad?'bad':''}"><div>${mascot(bad&&l.type==='took'?(n<0?'furious':'angry'):'worried')}</div><div>${loanMsg(l,n)}</div></div>`}).join('');
+}
+function loanReminders(){
+  const arr=dueSoon();if(!arr.length)return '';
+  return `<section class="card"><div class="sec-head"><h2>ধারের রিমাইন্ডার</h2><button class="btn ghost" style="padding:6px 12px;font-size:13px" data-act="nav" data-v="loans">সব দেখুন</button></div>${remindRows(arr.slice(0,3))}</section>`;
+}
+function loanCard(l){
+  const left=loanLeft(l),paid=sum(l.pays||[]),open=left>0,di=dueInfo(l),took=l.type==='took';
+  const armed=S.armed==='loan:'+l.id;
+  const pays=(l.pays||[]).length?`<div class="note">${took?'শোধ দিয়েছি':'ফেরত পেয়েছি'}: ${l.pays.map(p=>`${tk(p.amt)} (${new Date(p.d+'T00:00').toLocaleDateString('bn-BD',{day:'numeric',month:'short'})})`).join(', ')}</div>`:'';
+  return `<div class="loan ${open?l.type:'done'}">
+    <div class="loan-top">${avatar({name:l.person},40)}
+      <div class="name">${esc(l.person)}<small>${took?'নিয়েছি':'দিয়েছি'} ${fDate(l.d)}</small></div>
+      <div class="amt num">${tk(open?left:l.amt)}<small>${open?(paid?'মোট '+tk(l.amt)+' এর বাকি':'বাকি'):'মোট'}</small></div></div>
+    ${paid&&open?`<div class="track" aria-label="${bn(paid/l.amt*100)}% শোধ"><i style="width:${paid/l.amt*100}%"></i></div>`:''}
+    <span class="due ${di.cls}">${di.txt}</span>
+    ${l.note?`<div class="note">${esc(l.note)}</div>`:''}${pays}
+    <div class="loan-acts">
+      ${open?`<button class="btn" data-act="lpay" data-v="${l.id}">${took?'শোধ দিলাম':'ফেরত পেলাম'}</button>`:''}
+      ${open?`<button class="btn ghost" data-act="ledit" data-v="${l.id}">এডিট</button>`:''}
+      ${l.phone?`<a class="btn ghost" href="tel:${esc(l.phone)}">ফোন করুন</a>`:''}
+      <button class="btn danger" data-act="ldel" data-v="${l.id}">${armed?'নিশ্চিত, মুছবো?':'মুছুন'}</button>
+    </div></div>`;
+}
+function renderLoans(){
+  const all=loanList(),openL=all.filter(loanOpen);
+  const owe=sum(openL.filter(l=>l.type==='took').map(l=>({amt:loanLeft(l)})));
+  const get=sum(openL.filter(l=>l.type==='gave').map(l=>({amt:loanLeft(l)})));
+  const tab=S.loanTab;
+  const shown=(tab==='done'?all.filter(l=>!loanOpen(l)).sort((a,b)=>(b.doneAt||b.d).localeCompare(a.doneAt||a.d))
+    :openL.filter(l=>l.type===tab).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')||b.t-a.t));
+  const cnt=k=>k==='done'?all.length-openL.length:openL.filter(l=>l.type===k).length;
+  const segB=(k,l)=>`<button role="tab" aria-selected="${tab===k}" data-act="ltab" data-v="${k}">${l} (${bn(cnt(k))})</button>`;
+  const empty={took:'কারো কাছ থেকে ধার নেওয়া নেই। দারুণ!',gave:'কাউকে ধার দেওয়া নেই।',done:'এখনো কোনো ধার শোধ হয়নি।'}[tab];
+  const soon=dueSoon();
+  $('#root').innerHTML=`
+  <header class="top"><div><p class="hello">কার কাছে কত, কে কত নিলো</p><h1>ধার-দেনার খাতা</h1></div></header>
+  <section class="card">
+    <div class="stats" style="margin-top:0">
+      <div class="stat bad"><span>আমি দেব</span><strong class="num">${tk(owe)}</strong></div>
+      <div class="stat good"><span>আমি পাব</span><strong class="num">${tk(get)}</strong></div>
+    </div>
+    ${owe||get?`<p class="hint" style="margin-top:10px">${get>=owe?`সব পাওনা ফেরত পেলে আর দেনা শোধ করলে হাতে ${tk(get-owe)} বাড়বে।`:`সব মিটিয়ে ফেলতে আরও ${tk(owe-get)} লাগবে। প্রতি মাসে একটু একটু করে শোধ করুন।`}</p>`:''}
+  </section>
+  ${soon.length?`<section class="card"><div class="sec-head"><h2>সামনে বা পার হয়ে গেছে</h2></div>${remindRows(soon)}</section>`:''}
+  <button class="btn block" data-act="ladd" style="padding:14px;font-size:16px">+ নতুন ধার লিখুন</button>
+  <section class="card">
+    <div class="seg three" role="tablist" style="margin-bottom:8px">${segB('took','নিয়েছি')}${segB('gave','দিয়েছি')}${segB('done','শোধ')}</div>
+    ${shown.length?shown.map(loanCard).join(''):`<p class="empty">${empty}</p>`}
+  </section>`;
+}
+function openLoan(id){
+  const l=id&&loanList().find(x=>x.id===id);
+  S.ld=l?{id:l.id,type:l.type,person:l.person,phone:l.phone||'',amt:String(l.amt),d:l.d,due:l.due||'',note:l.note||''}
+    :{id:null,type:S.loanTab==='gave'?'gave':'took',person:'',phone:'',amt:'',d:todayStr(),due:'',note:''};
+  drawLoan();
+}
+function syncLoan(){
+  if(!S.ld||!$('#l-amt'))return;
+  Object.assign(S.ld,{amt:$('#l-amt').value,person:$('#l-person').value,phone:$('#l-phone').value,d:$('#l-date').value||todayStr(),due:$('#l-due').value,note:$('#l-note').value});
+}
+function drawLoan(){
+  const d=S.ld,took=d.type==='took';
+  $('#layer').innerHTML=`<div class="overlay" data-act="closebg"><form class="sheet" id="loanForm" novalidate role="dialog" aria-modal="true" aria-label="ধার লিখুন">
+    <div class="sheet-head"><h2>${d.id?'ধার এডিট':'নতুন ধার'}</h2><button type="button" class="icon-btn" data-act="close" aria-label="বন্ধ করুন">✕</button></div>
+    <div class="seg" role="tablist">
+      <button type="button" role="tab" aria-selected="${took}" data-act="ltype" data-v="took">আমি ধার নিলাম</button>
+      <button type="button" role="tab" aria-selected="${!took}" data-act="ltype" data-v="gave">আমি ধার দিলাম</button>
+    </div>
+    <div class="amount-in"><span>৳</span><input id="l-amt" inputmode="decimal" placeholder="০" value="${esc(d.amt)}" aria-label="টাকার পরিমাণ"></div>
+    <div class="row2">
+      <div class="field"><label for="l-person">${took?'কার কাছ থেকে নিলেন':'কাকে দিলেন'}</label><input id="l-person" placeholder="যেমন: রহিম ভাই" value="${esc(d.person)}" maxlength="40"></div>
+      <div class="field"><label for="l-phone">তার নম্বর (ঐচ্ছিক)</label><input id="l-phone" inputmode="tel" placeholder="01XXXXXXXXX" value="${esc(d.phone)}" maxlength="14"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="l-date">${took?'কবে নিলেন':'কবে দিলেন'}</label><input id="l-date" type="date" value="${d.d}" max="${todayStr()}"></div>
+      <div class="field"><label for="l-due">${took?'কবে ফেরত দেবেন':'কবে ফেরত পাবেন'}</label><input id="l-due" type="date" value="${d.due}"></div>
+    </div>
+    <div class="chips">${[[7,'৭ দিন পর'],[15,'১৫ দিন পর'],[30,'১ মাস পর']].map(([n,t])=>`<button type="button" class="chip" data-act="ldue" data-v="${n}">${t}</button>`).join('')}</div>
+    <div class="field"><label for="l-note">নোট (ঐচ্ছিক)</label><input id="l-note" placeholder="যেমন: মাসের শেষে টান পড়েছিল" value="${esc(d.note)}" maxlength="80"></div>
+    <p class="err" id="loanErr"></p>
+    <button class="btn block" type="submit" style="padding:14px;font-size:16px">খাতায় লিখে রাখুন</button>
+  </form></div>`;
+  setTimeout(()=>{const i=$('#l-amt');i&&!d.amt&&i.focus()},50);
+}
+async function onLoanSubmit(e){
+  e.preventDefault();syncLoan();
+  const d=S.ld,err=$('#loanErr');
+  const amt=Number(toEn(d.amt));
+  if(!amt||amt<=0){err.textContent='টাকার পরিমাণ লিখুন।';return}
+  const person=d.person.trim();if(!person){err.textContent=d.type==='took'?'কার কাছ থেকে নিলেন, নামটা লিখুন।':'কাকে দিলেন, নামটা লিখুন।';return}
+  const phone=toEn(d.phone).replace(/[^\d+]/g,'');
+  if(d.d>todayStr()){err.textContent='ভবিষ্যতের তারিখে ধার লেখা যাবে না।';return}
+  if(d.due&&d.due<d.d){err.textContent='ফেরতের তারিখ ধারের তারিখের আগে হতে পারে না।';return}
+  const old=d.id&&loanList().find(x=>x.id===d.id);
+  if(old&&amt<sum(old.pays||[])){err.textContent='এর চেয়ে বেশি টাকা আগেই শোধ হয়ে গেছে।';return}
+  const rec={type:d.type,person,phone,amt,d:d.d,due:d.due||'',note:d.note.trim().slice(0,80)};
+  if(old)Object.assign(old,rec);else S.loans.list.push({id:uid(),...rec,pays:[],t:Date.now()});
+  await saveLoans();
+  S.loanTab=d.type;S.ld=null;$('#layer').innerHTML='';
+  if(S.view!=='loans'){S.view='loans';window.scrollTo(0,0)}
+  render();
+  toast(old?'আপডেট হয়েছে':(d.type==='took'?`${person}-এর কাছ থেকে ${tk(amt)} ধার লেখা হলো`:`${person}-কে ${tk(amt)} ধার দেওয়া লেখা হলো`));
+}
+function openPay(id){
+  const l=loanList().find(x=>x.id===id);if(!l)return;
+  S.pay={id,amt:String(loanLeft(l)),d:todayStr()};
+  const took=l.type==='took';
+  $('#layer').innerHTML=`<div class="overlay" data-act="closebg"><form class="sheet" id="payForm" novalidate role="dialog" aria-modal="true" aria-label="শোধ লিখুন">
+    <div class="sheet-head"><h2>${took?`${esc(l.person)}-কে কত দিলেন?`:`${esc(l.person)} কত ফেরত দিল?`}</h2><button type="button" class="icon-btn" data-act="close" aria-label="বন্ধ করুন">✕</button></div>
+    <p class="hint" style="font-size:14px">মোট বাকি ${tk(loanLeft(l))}। পুরোটা হলে এভাবেই রাখুন, কিছু অংশ হলে টাকার পরিমাণ বদলে দিন।</p>
+    <div class="amount-in"><span>৳</span><input id="p-amt" inputmode="decimal" value="${loanLeft(l)}" aria-label="টাকার পরিমাণ"></div>
+    <div class="field"><label for="p-date">তারিখ</label><input id="p-date" type="date" value="${todayStr()}" max="${todayStr()}" min="${l.d}"></div>
+    <p class="err" id="payErr"></p>
+    <button class="btn block" type="submit" style="padding:14px;font-size:16px">${took?'শোধ লিখে রাখুন':'ফেরত লিখে রাখুন'}</button>
+  </form></div>`;
+}
+async function onPaySubmit(e){
+  e.preventDefault();
+  const l=S.pay&&loanList().find(x=>x.id===S.pay.id);if(!l)return;
+  const amt=Number(toEn($('#p-amt').value)),d=$('#p-date').value||todayStr(),err=$('#payErr'),left=loanLeft(l);
+  if(!amt||amt<=0){err.textContent='টাকার পরিমাণ লিখুন।';return}
+  if(amt>left){err.textContent=`বাকি আছে মাত্র ${tk(left)}, এর বেশি লেখা যাবে না।`;return}
+  if(d>todayStr()){err.textContent='ভবিষ্যতের তারিখ দেওয়া যাবে না।';return}
+  l.pays=l.pays||[];l.pays.push({id:uid(),amt,d});
+  const done=!loanOpen(l);if(done)l.doneAt=d;
+  await saveLoans();
+  S.pay=null;$('#layer').innerHTML='';render();
+  if(done)showPop('happy',l.type==='took'?'দেনা শেষ!':'পাওনা আদায়!',l.type==='took'?`${l.person}-এর পুরো ধার শোধ হয়ে গেল। কথা রাখার জন্য টাকু খুব খুশি!`:`${l.person} পুরো ${tk(l.amt)} ফেরত দিয়েছে। এবার টাকাটা সঞ্চয়ে রাখো!`,'দারুণ!');
+  else toast(`${tk(amt)} লেখা হলো, বাকি ${tk(loanLeft(l))}`);
+}
+
 /* ---------- add sheet ---------- */
 function openAdd(){
   S.draft={amt:'',cat:'travel',note:'',d:todayStr()};
@@ -852,10 +1044,10 @@ function reactTo(b,a,item){
   if(!mood){toast(tk(item.amt)+' খাতায় লেখা হলো');return}
   showPop(mood,title,msgFor(mood,a,Date.now()));
 }
-function showPop(mood,title,msg){
+function showPop(mood,title,msg,btn){
   $('#layer').innerHTML=`<div class="overlay center" data-act="closebg"><div class="pop p-${mood}" role="alertdialog" aria-modal="true" aria-labelledby="popT">
     <div class="mwrap">${mascot(mood)}</div><h2 id="popT">${title}</h2><p>${esc(msg)}</p>
-    <button class="btn block" data-act="close">আচ্ছা টাকু, কমাবো</button></div></div>`;
+    <button class="btn block" data-act="close">${btn||'আচ্ছা টাকু, কমাবো'}</button></div></div>`;
 }
 
 /* ================= events ================= */
@@ -863,6 +1055,8 @@ document.addEventListener('submit',e=>{
   if(e.target.id==='authForm')onAuthSubmit(e);
   else if(e.target.id==='addForm')onAddSubmit(e);
   else if(e.target.id==='setForm')onSettingsSubmit(e);
+  else if(e.target.id==='loanForm')onLoanSubmit(e);
+  else if(e.target.id==='payForm')onPaySubmit(e);
 });
 document.addEventListener('change',async e=>{
   if(e.target.id!=='s-photo'||!S.acct)return;
@@ -870,18 +1064,28 @@ document.addEventListener('change',async e=>{
   try{S.acct.photo=await readPhoto(f);await Store.set(acctKey(S.phone),S.acct);toast('ছবি সেভ হয়েছে');renderSettings()}
   catch(err){toast(err==='type'?'শুধু ছবি ফাইল দিন (JPG/PNG)।':'ছবিটা খোলা গেল না, অন্য ছবি দিন।')}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#layer').innerHTML){S.draft=null;$('#layer').innerHTML=''}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#layer').innerHTML){S.draft=null;S.ld=null;S.pay=null;$('#layer').innerHTML=''}});
 document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-act]');if(!el)return;
   const act=el.dataset.act,v=el.dataset.v;
   if(act==='closebg'&&e.target!==el)return;
-  if(act!=='del'&&act!=='resetmonth'&&S.armed){const was=S.armed;S.armed=null;if(was&&S.acct&&!$('#layer').innerHTML)render()}
+  if(act!=='del'&&act!=='resetmonth'&&act!=='ldel'&&S.armed){const was=S.armed;S.armed=null;if(was&&S.acct&&!$('#layer').innerHTML)render()}
   switch(act){
     case 'authtab':S.authTab=v;renderAuth();break;
     case 'demo':Store.forceLocal=Store.mode==='fb'||Store.mode==='fbfail';el.disabled=true;el.textContent='তৈরি হচ্ছে...';await makeDemo();break;
     case 'nav':S.view=v;if(v==='report'){S.repYm=S.curYm;await loadRep()}render();window.scrollTo(0,0);break;
     case 'add':openAdd();break;
-    case 'close':case 'closebg':S.draft=null;$('#layer').innerHTML='';break;
+    case 'close':case 'closebg':S.draft=null;S.ld=null;S.pay=null;$('#layer').innerHTML='';break;
+    case 'ltab':S.loanTab=v;renderLoans();break;
+    case 'ladd':openLoan(null);break;
+    case 'ledit':openLoan(v);break;
+    case 'ltype':syncLoan();S.ld.type=v;drawLoan();break;
+    case 'ldue':{syncLoan();S.ld.due=addDays(S.ld.d||todayStr(),Number(v));$('#l-due').value=S.ld.due;break}
+    case 'lpay':openPay(v);break;
+    case 'ldel':{
+      const key='loan:'+v;
+      if(S.armed!==key){S.armed=key;renderLoans();break}
+      S.armed=null;S.loans.list=S.loans.list.filter(l=>l.id!==v);await saveLoans();toast('মুছে ফেলা হয়েছে');renderLoans();break}
     case 'quick':{syncDraft();S.draft.amt=String((Number(toEn(S.draft.amt))||0)+Number(v));$('#a-amt').value=S.draft.amt;break}
     case 'cat':syncDraft();S.draft.cat=v;document.querySelectorAll('.catbtn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));break;
     case 'quote':S.qi++;render();break;
@@ -898,7 +1102,7 @@ document.addEventListener('click',async e=>{
     case 'resetmonth':
       if(S.armed!=='reset'){S.armed='reset';renderSettings();break}
       S.armed=null;S.cur={items:[],...(S.cur.income!=null?{income:S.cur.income}:{})};await Store.set(monKey(S.phone,S.curYm),S.cur);toast('এই মাসের খরচ মুছে ফেলা হয়েছে');renderSettings();break;
-    case 'logout':if(Store.m==='fb')Store.auth.signOut().catch(()=>{});Store.forceLocal=false;LS.del('session');S.acct=null;S.phone=null;S.cur=null;S.authTab='login';S.view='home';renderAuth();window.scrollTo(0,0);break;
+    case 'logout':if(Store.m==='fb')Store.auth.signOut().catch(()=>{});Store.forceLocal=false;LS.del('session');S.acct=null;S.phone=null;S.cur=null;S.loans=null;S.loanTab='took';S.authTab='login';S.view='home';renderAuth();window.scrollTo(0,0);break;
   }
 });
 

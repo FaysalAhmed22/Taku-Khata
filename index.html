@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E7656">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+
+<!-- Firebase (অনলাইনে হিসাব সেভ করার জন্য) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ============================================================
+   ↓↓↓ এখানে Firebase কনসোল থেকে পাওয়া firebaseConfig বসান ↓↓↓
+   (Project settings → Your apps → Web app → SDK setup and configuration → Config)
+   যতক্ষণ "PASTE_..." থাকবে, অ্যাপ শুধু ফোনের ব্রাউজারে হিসাব রাখবে।
+   ============================================================ */
+window.TAKU_FIREBASE = {
+  apiKey: "AIzaSyBHNPIz1yggKk5hKn9jOOFul_CKCOO2HI0",
+  authDomain: "taku-khata.firebaseapp.com",
+  projectId: "taku-khata",
+  storageBucket: "taku-khata.firebasestorage.app",
+  messagingSenderId: "493873371866",
+  appId: "1:493873371866:web:ac2008b6d931c64cf6e3e3"
+};
+</script>
+</head>
+<body>
+<title>টাকু খাতা</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column phone app (max 460px), mascot mood card on top, plan card, lists; bottom tab bar + floating add button */
+:root{
+  --bg:#EAF2EE; --surface:#FFFFFF; --surface-2:#F4F8F6; --ink:#14302A; --muted:#5A716A; --line:#D3E1DA;
+  --brand:#0E7656; --brand-soft:#D7EEE5; --brand-ink:#FFFFFF;
+  --sun:#F6BE33; --sun-deep:#C98E0A; --cheek:#F07C7C;
+  --ok:#1C9A68; --warn:#DE8516; --danger:#D23F48; --danger-soft:#FBE3E4; --warn-soft:#FCEFD9;
+  --shadow:0 1px 2px rgba(20,48,42,.06),0 8px 24px rgba(20,48,42,.07);
+  --f-display:"Baloo Da 2","Hind Siliguri",system-ui,sans-serif;
+  --f-body:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1815; --surface:#13241F; --surface-2:#182C26; --ink:#E4F0EB; --muted:#93AAA2; --line:#24392F;
+  --brand:#3CC394; --brand-soft:#173A2F; --brand-ink:#04241A;
+  --sun:#F6C64C; --sun-deep:#B88410; --cheek:#E86A6A;
+  --ok:#3CC394; --warn:#F0A443; --danger:#F06A70; --danger-soft:#3A1E21; --warn-soft:#3A2D18;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1815; --surface:#13241F; --surface-2:#182C26; --ink:#E4F0EB; --muted:#93AAA2; --line:#24392F;
+  --brand:#3CC394; --brand-soft:#173A2F; --brand-ink:#04241A;
+  --sun:#F6C64C; --sun-deep:#B88410; --cheek:#E86A6A;
+  --ok:#3CC394; --warn:#F0A443; --danger:#F06A70; --danger-soft:#3A1E21; --warn-soft:#3A2D18;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 120px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance}
+p{margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:8px}
+.num{font-variant-numeric:tabular-nums}
+.app{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+.muted{color:var(--muted)}
+.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:600;background:var(--brand);color:var(--brand-ink);font-family:var(--f-body)}
+.btn.ghost{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.block{width:100%}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600;color:var(--muted)}
+.field input,.field select{border:1.5px solid var(--line);background:var(--surface-2);border-radius:12px;padding:11px 12px;min-width:0;width:100%}
+.field input:focus{border-color:var(--brand);outline:none}
+.hint{font-size:12.5px;color:var(--muted)}
+.err{color:var(--danger);font-size:13.5px;font-weight:600;min-height:1em}
+
+/* ---------- auth ---------- */
+.auth{display:flex;flex-direction:column;gap:16px;padding-top:8px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{font-size:34px;font-weight:800;color:var(--brand)}
+.brand p{color:var(--muted);font-size:14px}
+.auth-hero{display:flex;gap:12px;align-items:center;background:var(--brand-soft);border-radius:20px;padding:14px}
+.auth-hero p{font-size:14.5px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:9px;font-weight:600;color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.form{display:flex;flex-direction:column;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- top ---------- */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.top .hello{color:var(--muted);font-size:14px}
+.top h1{font-size:26px;font-weight:700}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.who h1{overflow-wrap:anywhere}
+.avatar{border-radius:50%;object-fit:cover;display:inline-grid;place-items:center;background:var(--brand-soft);color:var(--brand);font-family:var(--f-display);font-weight:700;flex:none;border:2px solid var(--surface);box-shadow:var(--shadow);line-height:1}
+.photo-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.photo-btns{display:flex;gap:8px;flex-wrap:wrap}
+label.btn{display:inline-block;text-align:center}
+.datepill{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;white-space:nowrap}
+.demo-banner{background:var(--warn-soft);color:var(--ink);border-radius:14px;padding:10px 12px;font-size:13.5px}
+
+/* ---------- mood card ---------- */
+.mood{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center}
+.bubble{position:relative;background:var(--surface-2);border:1.5px solid var(--line);border-radius:16px;padding:10px 12px;font-size:14.5px;font-weight:500}
+.bubble::before{content:"";position:absolute;left:-8px;top:24px;width:14px;height:14px;background:inherit;border-left:1.5px solid var(--line);border-bottom:1.5px solid var(--line);transform:rotate(45deg)}
+.mood.m-worried .bubble{background:var(--warn-soft);border-color:var(--warn)}
+.mood.m-worried .bubble::before{border-color:var(--warn)}
+.mood.m-angry .bubble,.mood.m-furious .bubble{background:var(--danger-soft);border-color:var(--danger)}
+.mood.m-angry .bubble::before,.mood.m-furious .bubble::before{border-color:var(--danger)}
+.meter{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.meter-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.meter-row strong{font-family:var(--f-display);font-size:28px;font-weight:700}
+.meter-row .of{color:var(--muted)}
+.meter-row .lbl{margin-right:auto;font-weight:600}
+.bar{height:12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--ok);transition:width .5s ease}
+.bar.b-worried i{background:var(--warn)} .bar.b-angry i,.bar.b-furious i{background:var(--danger)}
+.meter-note{font-size:13.5px;color:var(--muted)}
+
+/* mascot */
+.mascot{display:block;width:100%;height:auto;overflow:visible}
+.mascot .steam{animation:steam 1.4s ease-in-out infinite;opacity:0}
+.mascot .steam.s2{animation-delay:.45s}
+.mascot.furious{animation:shake .45s linear infinite}
+.mascot.angry{animation:bob 1.2s ease-in-out infinite}
+.mascot.happy{animation:hop 2.4s ease-in-out infinite}
+@keyframes steam{0%{opacity:0;transform:translateY(6px) scale(.7)}40%{opacity:.9}100%{opacity:0;transform:translateY(-12px) scale(1.15)}}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2px) rotate(-3deg)}75%{transform:translateX(2px) rotate(3deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}}
+@keyframes hop{0%,80%,100%{transform:translateY(0)}88%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.mascot,.mascot .steam{animation:none!important}.mascot .steam{opacity:.8}}
+
+/* plan */
+.plan .big{font-family:var(--f-display);font-size:21px;font-weight:600;line-height:1.3;margin-top:4px}
+.plan .big b{color:var(--brand);font-size:30px;font-weight:800}
+.plan .sub{color:var(--muted);font-size:13.5px;margin-top:4px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.stat{background:var(--surface-2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat span{font-size:12.5px;color:var(--muted);font-weight:600}
+.stat strong{font-family:var(--f-display);font-size:20px;font-weight:700;overflow-wrap:anywhere}
+.stat.good strong{color:var(--ok)} .stat.bad strong{color:var(--danger)}
+.alert-line{margin-top:12px;border-radius:12px;padding:9px 12px;font-size:13.5px;font-weight:500}
+.alert-line.good{background:var(--brand-soft)} .alert-line.bad{background:var(--danger-soft);color:var(--ink)}
+
+/* list */
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px}
+.sec-head h2{font-size:19px;font-weight:700}
+.list{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:36px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.cat-dot{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;color:#fff;font-size:16px}
+.item .name{font-weight:600;line-height:1.25;min-width:0}
+.item .name small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.item .amt{font-family:var(--f-display);font-weight:700;font-size:17px}
+.del{border:0;background:transparent;color:var(--muted);border-radius:10px;padding:6px 8px;font-size:12.5px}
+.del.armed{background:var(--danger-soft);color:var(--danger);font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:14px 4px;font-size:14px}
+.fixed-tag{display:inline-block;font-size:11px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:4px;color:var(--muted);font-weight:500}
+
+/* quote */
+.quote{background:var(--brand);color:var(--brand-ink);border-radius:20px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.quote p{font-family:var(--f-display);font-size:19px;font-weight:600;line-height:1.35;position:relative}
+.quote small{display:block;margin-top:8px;opacity:.8;font-size:13px;position:relative}
+.quote::after{content:"৳";position:absolute;right:-6px;bottom:-40px;font-family:var(--f-display);font-size:150px;font-weight:800;opacity:.12;line-height:1}
+.quote button{position:relative;margin-top:10px;background:transparent;border:1.5px solid currentColor;color:inherit;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600;opacity:.9}
+
+/* report */
+.month-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.month-nav h2{font-size:22px}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:18px;font-weight:700}
+.icon-btn:disabled{opacity:.35;cursor:default}
+.cat-bars{display:flex;flex-direction:column;gap:10px}
+.cbar{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px}
+.cbar .track{grid-column:1/-1;height:9px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.cbar .track i{display:block;height:100%;border-radius:999px}
+.cbar b{font-family:var(--f-display);font-weight:700}
+.cbar .pct{color:var(--muted);font-size:12.5px;margin-left:4px;font-weight:500}
+.daychart{display:flex;align-items:flex-end;gap:2px;height:140px;position:relative;margin-top:6px;border-bottom:1px solid var(--line)}
+.daychart .col{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end}
+.daychart .col i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--brand);min-height:2px}
+.daychart .col.over i{background:var(--danger)}
+.daychart .col.future i{background:var(--line)}
+.daychart .col.today i{outline:2px solid var(--ink);outline-offset:1px}
+.limitline{position:absolute;left:0;right:0;border-top:2px dashed var(--warn);pointer-events:none}
+.limitline span{position:absolute;right:0;top:-20px;font-size:11.5px;font-weight:600;color:var(--warn);background:var(--surface);padding:0 4px;border-radius:4px}
+.daylabels{display:flex;gap:2px;font-size:10.5px;color:var(--muted)}
+.daylabels span{flex:1;text-align:center;min-width:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.day-group h3{font-family:var(--f-body);font-size:13.5px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;margin:12px 0 2px}
+
+/* tips */
+.tip{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.tip:first-child{border-top:0;padding-top:4px}
+.tip .ico{width:40px;height:40px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:18px}
+.tip h3{font-family:var(--f-body);font-size:15px;font-weight:700;margin-bottom:2px}
+.tip p{font-size:14px;color:var(--muted)}
+.tip p b{color:var(--ink)}
+.tip.hot .ico{background:var(--danger-soft);color:var(--danger)}
+
+/* settings */
+.set-list{display:flex;flex-direction:column;gap:12px}
+.inline{display:flex;gap:8px;align-items:flex-end}
+.inline .field{flex:1;min-width:0}
+.store-note{font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:10px 12px}
+
+/* bottom nav */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.tabbar nav{max-width:460px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 76px 1fr 1fr;align-items:center;height:64px}
+.tab{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{color:var(--brand)}
+.fab{justify-self:center;width:60px;height:60px;border-radius:20px;border:0;background:var(--brand);color:var(--brand-ink);font-size:32px;font-weight:500;line-height:1;transform:translateY(-16px);box-shadow:0 8px 20px rgba(14,118,86,.35);display:grid;place-items:center}
+
+/* sheet + modal */
+.overlay{position:fixed;inset:0;z-index:40;background:rgba(8,20,16,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:500px;border-radius:24px 24px 0 0;max-height:92%;overflow:auto;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center}
+.sheet-head h2{font-size:22px}
+.amount-in{display:flex;align-items:center;gap:6px;border:2px solid var(--brand);border-radius:16px;padding:6px 14px;background:var(--surface-2)}
+.amount-in span{font-family:var(--f-display);font-size:30px;font-weight:700;color:var(--brand)}
+.amount-in input{border:0;background:transparent;font-family:var(--f-display);font-size:34px;font-weight:700;width:100%;min-width:0;outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--surface-2);border-radius:999px;padding:5px 12px;font-weight:600;font-size:14px}
+.catgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.catbtn{border:1.5px solid var(--line);background:var(--surface-2);border-radius:14px;padding:9px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:600;line-height:1.2;text-align:center}
+.catbtn .cat-dot{width:30px;height:30px;font-size:14px;border-radius:10px}
+.catbtn[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+.overlay.center{align-items:center;padding:16px}
+.pop{background:var(--surface);border-radius:24px;max-width:360px;width:100%;padding:22px 20px 18px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;animation:pop .28s cubic-bezier(.3,1.5,.6,1)}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+.pop .mwrap{width:130px}
+.pop h2{font-size:24px}
+.pop.p-angry h2,.pop.p-furious h2{color:var(--danger)}
+.pop.p-worried h2{color:var(--warn)}
+.pop p{font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:60;max-width:calc(100% - 32px);text-align:center}
+@media (max-width:380px){.catgrid{grid-template-columns:repeat(2,1fr)}.mood{grid-template-columns:80px 1fr}.stat strong{font-size:18px}}
+</style>
+
+<div id="root" class="app" aria-live="polite"></div>
+<div id="tabbar" class="tabbar" hidden></div>
+<div id="layer"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ================= data ================= */
+const CATS=[
+ {k:'travel',n:'যাতায়াত ভাড়া',g:'যা',c:'#2E7FD0'},
+ {k:'food',n:'খাবার',g:'খা',c:'#DD7A1E'},
+ {k:'tea',n:'চা-নাস্তা',g:'চা',c:'#A86B12'},
+ {k:'cig',n:'সিগারেট',g:'সি',c:'#6F7E80'},
+ {k:'adda',n:'আড্ডা/বন্ধু',g:'আ',c:'#8A47B0'},
+ {k:'bazar',n:'বাজার',g:'বা',c:'#2F9E57'},
+ {k:'mobile',n:'মোবাইল/নেট',g:'মো',c:'#14957F'},
+ {k:'shop',n:'কেনাকাটা',g:'কে',c:'#C9541A'},
+ {k:'health',n:'ওষুধ/ডাক্তার',g:'ও',c:'#C43B3B'},
+ {k:'house',n:'বাসা ভাড়া',g:'ঘ',c:'#3E5872',fixed:true},
+ {k:'bill',n:'বিল',g:'বি',c:'#55657A',fixed:true},
+ {k:'family',n:'বাড়িতে পাঠানো',g:'প',c:'#17A589',fixed:true},
+ {k:'other',n:'অন্যান্য',g:'অ',c:'#8C9AA0'},
+];
+const CAT=Object.fromEntries(CATS.map(c=>[c.k,c]));
+const isFixed=i=>!!(CAT[i.cat]&&CAT[i.cat].fixed);
+
+const QUOTES=[
+ ['বিন্দু বিন্দু জলে সিন্ধু হয়। আজকের ২০ টাকাই মাস শেষে ৬০০ টাকা।','প্রবাদ'],
+ ['আয় বুঝে ব্যয় করো।','প্রবাদ'],
+ ['খরচের পরে যা থাকে তা জমিও না; জমানোর পরে যা থাকে তা খরচ করো।','ওয়ারেন বাফেটের কথা থেকে'],
+ ['ছোট খরচগুলোকে অবহেলা কোরো না, ছোট একটা ফুটোই বড় জাহাজ ডুবিয়ে দেয়।','বেঞ্জামিন ফ্র্যাংকলিন'],
+ ['সিগারেটের ধোঁয়ার সাথে টাকাও উড়ে যায়, ফিরে আসে না।','টাকু'],
+ ['মাসের শেষ সপ্তাহের তুমি, আজকের তোমাকে ধন্যবাদ দেবে।','টাকু'],
+ ['প্রয়োজন আর ইচ্ছার পার্থক্য বুঝলেই অর্ধেক সঞ্চয় হয়ে যায়।','টাকু'],
+ ['আজ একটু কষ্ট, কাল অনেক স্বস্তি।','টাকু'],
+ ['বেতন আসে মাসে একবার, খরচ আসে প্রতিদিন। তাই হিসাবও রাখো প্রতিদিন।','টাকু'],
+ ['যে টাকা খরচ হয়নি, সেটাও তোমার আয়।','টাকু'],
+ ['বিপদের দিনের বন্ধু হলো জমানো টাকা।','টাকু'],
+ ['লিখে রাখা খরচ কমে, না লেখা খরচ বাড়ে।','টাকু'],
+];
+
+const MSG={
+ none:['আজ এখনো এক টাকাও খরচ হয়নি। এভাবেই চলুক!','খাতা একদম পরিষ্কার! আমি খুব খুশি (◕‿◕)'],
+ happy:['বাহ! আজ একদম হিসাব মতো চলছ। চালিয়ে যাও!','দারুণ! এভাবে চললে মাস শেষে টাকা বাঁচবেই (˶ᵔ ᵕ ᵔ˶)','তুমি তো দেখি পাক্কা হিসাবি মানুষ!'],
+ ok:['ঠিক আছে, এখনো লিমিটের মধ্যে আছ। তবে চোখ রাখছি কিন্তু (¬‿¬)','আধা লিমিট পার। বাকি দিনটা একটু বুঝে শুনে, হুম?'],
+ worried:['এই যে বস! আজকের লিমিটের {p}% শেষ। এবার একটু হাত গুটাও না (｡•́︿•̀｡)','উফফ! লিমিট প্রায় শেষ। আর একটা চা খেলেও কিন্তু রাগ করব!','আর মাত্র ৳{r} বাকি! পকেটে হাত দেওয়ার আগে দুবার ভাবো।'],
+ angry:['হুঁহ! লিমিটের একদম কাছে চলে এসেছ। আজ আর খরচ না, বুঝলে? (｀へ´)','এই! আর মাত্র ৳{r}! এখন খরচ করলে আমি সত্যিই রাগ করব (╬ ಠ益ಠ)'],
+ furious:['লিমিট পার করে ফেলেছ! আজ আর এক টাকাও না! খুব রাগ করেছি (╯°□°)╯','এটা কী হলো?! ৳{o} বেশি খরচ! কাল কিন্তু কম খরচ করে পুষিয়ে দিতে হবে (ꐦ°᷄д°᷅)','রাগে আমার ভাপ বের হচ্ছে! আজকের মতো মানিব্যাগ বন্ধ, প্লিজ!'],
+ cig:['আবার সিগারেট?! টাকাও পুড়ছে, ফুসফুসও পুড়ছে। রাগ করলাম কিন্তু! (ಠ_ಠ)','এই সিগারেটের টাকায় মাস শেষে একটা ভালো খাবার হয়ে যেত, জানো?'],
+};
+
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toEn=s=>String(s??'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/,/g,'').trim();
+const bn=n=>Math.round(Number(n)||0).toLocaleString('bn-BD');
+const tk=n=>'৳'+bn(n);
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const ymOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
+const todayStr=()=>ymd(new Date());
+const sum=a=>a.reduce((s,i)=>s+(Number(i.amt)||0),0);
+const BN_MONTHS=['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const monthName=ym=>{const [y,m]=ym.split('-').map(Number);return BN_MONTHS[m-1]+' '+y.toLocaleString('bn-BD',{useGrouping:false})};
+const shiftYm=(ym,d)=>{const [y,m]=ym.split('-').map(Number);return ymOf(new Date(y,m-1+d,1))};
+const hashStr=s=>{let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))|0;return Math.abs(h)};
+const pick=(arr,seed)=>arr[seed%arr.length];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+async function hashPin(phone,pin){
+  const s='taku:'+phone+':'+pin;
+  try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  catch(e){return 'd'+hashStr(s)}
+}
+function avatar(a,size){
+  const ok=typeof a.photo==='string'&&a.photo.startsWith('data:image/');
+  return ok?`<img class="avatar" src="${esc(a.photo)}" alt="${esc(a.name)}-এর ছবি" style="width:${size}px;height:${size}px">`
+    :`<span class="avatar" aria-hidden="true" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px">${esc([...String(a.name||'?').trim()][0]||'?')}</span>`;
+}
+function readPhoto(file){
+  return new Promise((res,rej)=>{
+    if(!file||!/^image\//.test(file.type))return rej('type');
+    const r=new FileReader();
+    r.onload=()=>{const img=new Image();
+      img.onload=()=>{const s=200,c=document.createElement('canvas');c.width=c.height=s;const ctx=c.getContext('2d');
+        const m=Math.min(img.naturalWidth,img.naturalHeight);
+        ctx.drawImage(img,(img.naturalWidth-m)/2,(img.naturalHeight-m)/2,m,m,0,0,s,s);res(c.toDataURL('image/jpeg',.82))};
+      img.onerror=()=>rej('img');img.src=r.result};
+    r.onerror=()=>rej('read');r.readAsDataURL(file);
+  });
+}
+let toastT;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2400)}
+
+/* ================= storage ================= */
+const LS={
+  get(k){try{const v=localStorage.getItem('taku:'+k);return v?JSON.parse(v):null}catch(e){return null}},
+  set(k,v){try{localStorage.setItem('taku:'+k,JSON.stringify(v))}catch(e){}},
+  del(k){try{localStorage.removeItem('taku:'+k)}catch(e){}}
+};
+/* mode: 'local' (this browser) · 'cloud' (Claude artifact store) · 'fb' (Firebase) · 'fbfail' (Firebase set up but SDK didn't load) */
+const Store={
+  mode:'local',db:null,uid:null,q:{},fs:null,auth:null,forceLocal:false,
+  get m(){return this.forceLocal?'local':this.mode},
+  async init(){
+    const cfg=window.TAKU_FIREBASE;
+    if(cfg&&cfg.apiKey&&!/PASTE/.test(cfg.apiKey)){
+      if(!window.firebase){this.mode='fbfail';return}
+      try{
+        firebase.initializeApp(cfg);this.auth=firebase.auth();this.fs=firebase.firestore();
+        try{this.fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+        this.mode='fb';return;
+      }catch(e){console.error(e);this.mode='fbfail';return}
+    }
+    if(!(window.claude&&typeof window.claude.use==='function'))return;
+    try{
+      const r=await Promise.race([Promise.all([window.claude.use('db'),window.claude.use('user')]),new Promise(res=>setTimeout(()=>res(null),7000))]);
+      if(!r)return;const [db,user]=r;if(!db||!user)return;
+      const id=await user.id();if(!id)return;
+      this.db=db;this.uid=id;this.mode='cloud';
+    }catch(e){}
+  },
+  ref(k){return this.db.doc('data/users/'+this.uid+'/'+k)},
+  fref(k){return this.fs.collection('users').doc(this.auth.currentUser.uid).collection('data').doc(k)},
+  /* in Firebase mode a failed read THROWS, so callers never mistake "offline" for "empty" and overwrite real data */
+  async get(k){
+    if(this.m==='fb'){
+      if(!this.auth.currentUser)return null;
+      const s=await this.fref(k).get();
+      return s.exists?JSON.parse(JSON.stringify(s.data())):null;
+    }
+    if(this.m==='cloud'){
+      try{const s=await this.ref(k).get();if(s.exists){const d=JSON.parse(JSON.stringify(s.data()));LS.set(k,d);return d}return LS.get(k)}
+      catch(e){return LS.get(k)}
+    }
+    return LS.get(k);
+  },
+  set(k,v){
+    const body=JSON.parse(JSON.stringify(v));
+    if(this.m==='fb'){
+      if(!this.auth.currentUser)return Promise.resolve();
+      const ref=this.fref(k);
+      this.q[k]=(this.q[k]||Promise.resolve()).then(()=>ref.set(body)).catch(e=>{console.error(e);toast('অনলাইনে সেভ হয়নি। ইন্টারনেট সংযোগ দেখুন।')});
+      return this.q[k];
+    }
+    LS.set(k,v);
+    if(this.m!=='cloud')return Promise.resolve();
+    this.q[k]=(this.q[k]||Promise.resolve()).then(()=>this.ref(k).set(body)).catch(e=>{
+      if(e&&e.code==='quota_exceeded')toast('জায়গা শেষ! পুরনো মাসের ডেটা মুছুন।');else toast('ক্লাউডে সেভ হয়নি, এই ডিভাইসে রাখা আছে।');
+    });
+    return this.q[k];
+  }
+};
+const acctKey=p=>'acct_'+p, monKey=(p,ym)=>'exp_'+p+'_'+ym;
+
+/* ================= state ================= */
+const S={acct:null,phone:null,cur:null,curYm:ymOf(new Date()),view:'home',repYm:ymOf(new Date()),rep:null,authTab:'login',qi:hashStr(todayStr())%QUOTES.length,armed:null,draft:null};
+
+/* ================= calculations ================= */
+function calc(acct,month,ym){
+  const items=(month&&month.items)||[];
+  const income=Number(month&&month.income!=null?month.income:acct.salary)||0;
+  const savings=Number(acct.savings)||0, fixedPlan=Number(acct.fixed)||0;
+  const [Y,M]=ym.split('-').map(Number);const dim=new Date(Y,M,0).getDate();
+  const now=new Date(), curYm=ymOf(now), isCur=ym===curYm, t=todayStr();
+  const elapsed=isCur?now.getDate():(ym<curYm?dim:0);
+  const spent=sum(items), fixedSpent=sum(items.filter(isFixed)), flexSpent=spent-fixedSpent;
+  const todayItems=items.filter(i=>i.d===t);
+  const todayFlex=sum(todayItems.filter(i=>!isFixed(i)));
+  const todayFixed=sum(todayItems.filter(isFixed));
+  const spentBefore=sum(items.filter(i=>i.d<t));
+  const remainingFixed=Math.max(0,fixedPlan-fixedSpent);
+  const daysLeft=isCur?dim-now.getDate()+1:0;
+  const pool=income-savings-spentBefore-todayFixed-remainingFixed;
+  const perDay=daysLeft?Math.max(0,Math.floor(pool/daysLeft)):0;
+  const autoLimit=perDay;
+  const limit=Number(acct.dailyLimit)>0?Number(acct.dailyLimit):autoLimit;
+  const pct=limit>0?todayFlex/limit:(todayFlex>0?2:0);
+  const avgFlex=elapsed?flexSpent/elapsed:0;
+  const projSpend=isCur?spent+avgFlex*(dim-elapsed)+remainingFixed:spent;
+  const projSave=income-projSpend;
+  const suggested=Math.max(0,Math.floor((income-savings-fixedPlan)/dim));
+  return {items,income,savings,fixedPlan,dim,isCur,elapsed,spent,fixedSpent,flexSpent,todayItems,todayFlex,daysLeft,perDay,limit,autoLimit,pct,projSave,suggested,left:income-spent,remainingFixed};
+}
+function moodOf(c){
+  if(c.todayFlex===0)return 'none';
+  if(c.pct<0.5)return 'happy';
+  if(c.pct<0.75)return 'ok';
+  if(c.pct<0.9)return 'worried';
+  if(c.pct<1)return 'angry';
+  return 'furious';
+}
+function msgFor(mood,c,seed){
+  const m=pick(MSG[mood],seed);
+  return m.replace('{p}',bn(c.pct*100)).replace('{r}',bn(Math.max(0,c.limit-c.todayFlex))).replace('{o}',bn(Math.max(0,c.todayFlex-c.limit)));
+}
+
+/* ================= mascot ================= */
+function mascot(mood){
+  const m=mood==='none'?'happy':mood;
+  const eyesRound='<circle cx="46" cy="64" r="4.6" fill="#2A2112"/><circle cx="74" cy="64" r="4.6" fill="#2A2112"/><circle cx="47.6" cy="62.4" r="1.4" fill="#fff"/><circle cx="75.6" cy="62.4" r="1.4" fill="#fff"/>';
+  const parts={
+    happy:'<path d="M40 65 Q46 57 52 65" stroke="#2A2112" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M68 65 Q74 57 80 65" stroke="#2A2112" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M46 78 Q60 94 74 78 Z" fill="#7A2E1A"/><path d="M52 84 Q60 89 68 84" fill="#F28B82"/>',
+    ok:eyesRound+'<path d="M49 80 Q60 88 71 80" stroke="#2A2112" stroke-width="3.4" fill="none" stroke-linecap="round"/>',
+    worried:eyesRound+'<path d="M38 54 L52 49" stroke="#2A2112" stroke-width="3.2" stroke-linecap="round"/><path d="M82 54 L68 49" stroke="#2A2112" stroke-width="3.2" stroke-linecap="round"/><path d="M48 85 Q54 80 60 85 Q66 90 72 85" stroke="#2A2112" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M88 52 q3 6 0 9 q-3-3 0-9z" fill="#7FC8F0"/>',
+    angry:eyesRound+'<path d="M37 49 L53 56" stroke="#2A2112" stroke-width="3.8" stroke-linecap="round"/><path d="M83 49 L67 56" stroke="#2A2112" stroke-width="3.8" stroke-linecap="round"/><path d="M48 87 Q60 77 72 87" stroke="#2A2112" stroke-width="3.6" fill="none" stroke-linecap="round"/>',
+    furious:'<path d="M40 60 L52 66 L40 68" stroke="#2A2112" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M80 60 L68 66 L80 68" stroke="#2A2112" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 50 L53 57" stroke="#2A2112" stroke-width="4" stroke-linecap="round"/><path d="M84 50 L67 57" stroke="#2A2112" stroke-width="4" stroke-linecap="round"/><rect x="46" y="77" width="28" height="12" rx="5" fill="#7A2E1A"/><path d="M46 83 H74 M53 77 V89 M60 77 V89 M67 77 V89" stroke="#fff" stroke-width="1.6"/><g stroke="#D23F48" stroke-width="3" stroke-linecap="round"><path d="M86 34 l5 5 M91 34 l-5 5 M84 37 h2 M93 37 h-2"/></g>'
+  };
+  const hot=m==='angry'||m==='furious';
+  const cheeks=`<ellipse cx="38" cy="75" rx="6" ry="3.6" fill="var(--cheek)" opacity="${hot?.85:.45}"/><ellipse cx="82" cy="75" rx="6" ry="3.6" fill="var(--cheek)" opacity="${hot?.85:.45}"/>`;
+  const steam=hot?`<g fill="var(--muted)"><g class="steam"><circle cx="24" cy="24" r="6"/><circle cx="18" cy="16" r="4"/></g><g class="steam s2"><circle cx="96" cy="22" r="6"/><circle cx="102" cy="14" r="4"/></g></g>`:'';
+  const flush=m==='furious'?'<circle cx="60" cy="66" r="44" fill="#E2412E" opacity=".28"/>':(m==='angry'?'<circle cx="60" cy="66" r="44" fill="#E2412E" opacity=".14"/>':'');
+  return `<svg class="mascot ${m}" viewBox="0 0 120 120" role="img" aria-label="টাকু, মেজাজ: ${m}">
+    ${steam}
+    <ellipse cx="60" cy="114" rx="30" ry="4" fill="var(--line)"/>
+    <circle cx="60" cy="66" r="46" fill="var(--sun-deep)"/>
+    <circle cx="60" cy="64" r="44" fill="var(--sun)"/>
+    <circle cx="60" cy="64" r="37" fill="none" stroke="var(--sun-deep)" stroke-width="2" stroke-dasharray="3 4" opacity=".55"/>
+    ${flush}
+    <ellipse cx="42" cy="36" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-25 42 36)"/>
+    ${cheeks}${parts[m]}
+  </svg>`;
+}
+
+/* ================= icons ================= */
+const IC={
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  report:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  tips:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+};
+
+/* ================= auth ================= */
+function renderAuth(err=''){
+  $('#tabbar').hidden=true;
+  const login=S.authTab==='login';
+  $('#root').innerHTML=`
+  <section class="auth">
+    <div class="brand"><div style="width:64px">${mascot('happy')}</div><div><h1>টাকু খাতা</h1><p>প্রতিদিনের খরচের হিসাব, মাস শেষে সঞ্চয়</p></div></div>
+    <div class="auth-hero"><p>আমি <b>টাকু</b>। তুমি কোথায় কত খরচ করলে লিখে রাখো, আমি বলে দেব প্রতিদিন কত টাকা খরচ করলে পুরো মাস চলবে। লিমিট পার করলে কিন্তু রাগ করব!</p></div>
+    <div class="card form">
+      <div class="seg" role="tablist">
+        <button role="tab" aria-selected="${login}" data-act="authtab" data-v="login">লগ ইন</button>
+        <button role="tab" aria-selected="${!login}" data-act="authtab" data-v="signup">নতুন একাউন্ট</button>
+      </div>
+      <form id="authForm" class="form" novalidate>
+        ${login?'':`<div class="field"><label for="f-name">আপনার নাম</label><input id="f-name" autocomplete="name" placeholder="যেমন: রাকিব হাসান" required></div>`}
+        <div class="field"><label for="f-phone">মোবাইল নম্বর</label><input id="f-phone" inputmode="numeric" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="14"></div>
+        <div class="field"><label for="f-pin">৪ সংখ্যার পিন</label><input id="f-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="${login?'current-password':'new-password'}"></div>
+        ${login?'':`<div class="row2">
+          <div class="field"><label for="f-salary">মাসিক বেতন (৳)</label><input id="f-salary" inputmode="decimal" placeholder="25000"></div>
+          <div class="field"><label for="f-save">মাসে কত জমাতে চান</label><input id="f-save" inputmode="decimal" placeholder="3000"></div>
+        </div><p class="hint">পিনটা মনে রাখবেন। এটা দিয়েই পরে লগ ইন করবেন।</p>`}
+        <p class="err" id="authErr">${esc(err)}</p>
+        <button class="btn block" type="submit">${login?'লগ ইন করুন':'একাউন্ট খুলুন'}</button>
+      </form>
+      <div class="or">অথবা</div>
+      <button class="btn ghost block" data-act="demo">ডেমো একাউন্টে ঘুরে দেখুন</button>
+    </div>
+    <p class="hint" style="text-align:center">${storeNote(true)}</p>
+  </section>`;
+}
+function storeNote(short){
+  const m=Store.m;
+  if(m==='fb')return short?'আপনার হিসাব অনলাইনে নিরাপদে সেভ থাকে। যেকোনো ফোন থেকে নম্বর আর পিন দিয়ে লগ ইন করতে পারবেন।':'আপনার হিসাব অনলাইনে (Firebase) সেভ হচ্ছে। শুধু আপনি দেখতে পারবেন, যেকোনো ফোন থেকে নম্বর আর পিন দিয়ে লগ ইন করলেই পাবেন।';
+  if(m==='fbfail')return 'অনলাইন সার্ভারে যোগাযোগ হচ্ছে না। ইন্টারনেট চালু করে পেজটা রিলোড করুন।';
+  if(m==='cloud')return short?'আপনার হিসাব আপনার Claude একাউন্টে প্রাইভেটভাবে সেভ থাকে।':'আপনার হিসাব আপনার Claude একাউন্টে প্রাইভেটভাবে সেভ হচ্ছে। অন্য কেউ দেখতে পারবে না, অন্য ডিভাইস থেকেও এই পেজ খুললে পাবেন।';
+  return short?'আপনার হিসাব এই ব্রাউজারেই সেভ থাকে।':(Store.forceLocal?'এটা ডেমো, তাই ডেটা শুধু এই ব্রাউজারে থাকছে।':'আপনার হিসাব শুধু এই ব্রাউজারে সেভ হচ্ছে। ব্রাউজারের ডেটা মুছলে হিসাবও মুছে যাবে।');
+}
+const fbEmail=p=>p+'@taku.example.com';
+const fbPass=(p,pin)=>pin+'-taku-'+p;
+function fbErr(e){
+  const c=(e&&e.code)||'';
+  if(c==='auth/email-already-in-use')return 'এই নম্বরে আগেই একাউন্ট আছে। লগ ইন করুন।';
+  if(['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-login-credentials'].includes(c))return 'মোবাইল নম্বর বা পিন ভুল। নতুন হলে "নতুন একাউন্ট" খুলুন।';
+  if(c==='auth/too-many-requests')return 'অনেকবার ভুল চেষ্টা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।';
+  if(c==='auth/network-request-failed'||c==='unavailable')return 'ইন্টারনেট সংযোগ নেই। চালু করে আবার চেষ্টা করুন।';
+  if(c==='auth/operation-not-allowed')return 'Firebase-এ Email/Password লগ ইন চালু করা হয়নি (অ্যাপের মালিককে জানান)।';
+  if(c==='permission-denied')return 'ডেটা পড়ার অনুমতি নেই। Firestore-এর Rules ঠিক করে বসানো হয়েছে কিনা দেখুন।';
+  return 'সমস্যা হয়েছে'+(c?' ('+c+')':'')+'। আবার চেষ্টা করুন।';
+}
+function validPhone(p){return /^01[3-9]\d{8}$/.test(p)}
+async function onAuthSubmit(e){
+  e.preventDefault();
+  const errEl=$('#authErr'),btn=e.target.querySelector('button[type=submit]');
+  const phone=toEn($('#f-phone').value).replace(/\D/g,'').replace(/^880/,'0');
+  const pin=toEn($('#f-pin').value);
+  const login=S.authTab==='login';
+  if(!validPhone(phone)){errEl.textContent='সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (01 দিয়ে শুরু)।';return}
+  if(!/^\d{4}$/.test(pin)){errEl.textContent='পিন হতে হবে ৪ সংখ্যার।';return}
+  let name='',salary=0,savings=0;
+  if(!login){
+    name=$('#f-name').value.trim();
+    if(!name){errEl.textContent='আপনার নাম লিখুন।';return}
+    salary=Number(toEn($('#f-salary').value))||0;savings=Number(toEn($('#f-save').value))||0;
+    if(savings>salary&&salary>0){errEl.textContent='সঞ্চয়ের লক্ষ্য বেতনের চেয়ে বেশি হতে পারে না।';return}
+  }
+  if(Store.m==='fbfail'){errEl.textContent=storeNote();return}
+  if(Store.m==='fb'){
+    btn.disabled=true;errEl.textContent='';
+    try{
+      if(login){
+        await Store.auth.signInWithEmailAndPassword(fbEmail(phone),fbPass(phone,pin));
+        let acct=await Store.get(acctKey(phone));
+        if(!acct){acct={name:'বন্ধু',phone,salary:0,savings:0,fixed:0,dailyLimit:0,created:Date.now()};await Store.set(acctKey(phone),acct)}
+        return enter(phone,acct);
+      }
+      await Store.auth.createUserWithEmailAndPassword(fbEmail(phone),fbPass(phone,pin));
+      const acct={name,phone,salary,savings,fixed:0,dailyLimit:0,created:Date.now()};
+      await Store.set(acctKey(phone),acct);
+      return enter(phone,acct,true);
+    }catch(err){console.error(err);errEl.textContent=fbErr(err);btn.disabled=false;return}
+  }
+  const existing=await Store.get(acctKey(phone));
+  const h=await hashPin(phone,pin);
+  if(login){
+    if(!existing){errEl.textContent='এই নম্বরে কোনো একাউন্ট নেই। "নতুন একাউন্ট" খুলুন।';return}
+    if(existing.pin!==h){errEl.textContent='পিন মিলছে না। আবার চেষ্টা করুন।';return}
+    return enter(phone,existing);
+  }
+  if(existing){errEl.textContent='এই নম্বরে আগেই একাউন্ট আছে। লগ ইন করুন।';return}
+  const acct={name,phone,pin:h,salary,savings,fixed:0,dailyLimit:0,created:Date.now()};
+  await Store.set(acctKey(phone),acct);
+  enter(phone,acct,true);
+}
+async function enter(phone,acct,fresh){
+  let cur;
+  try{cur=await Store.get(monKey(phone,ymOf(new Date())))}
+  catch(e){console.error(e);S.acct=null;return renderAuth(fbErr(e))}
+  S.phone=phone;S.acct=acct;S.curYm=ymOf(new Date());S.repYm=S.curYm;
+  S.cur=cur||{items:[]};
+  if(!S.cur.items)S.cur.items=[];
+  if(Store.m!=='fb')LS.set('session',phone);
+  S.view='home';render();
+  if(fresh)toast('স্বাগতম, '+acct.name+'! প্রথম খরচটা যোগ করুন।');
+}
+
+/* ================= demo ================= */
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}}
+async function makeDemo(){
+  const phone='01000000000';
+  const now=new Date(), ym=ymOf(now), r=rng(hashStr(ym));
+  const acct={name:'ডেমো ইউজার',phone,pin:await hashPin(phone,'0000'),salary:30000,savings:5000,fixed:11500,dailyLimit:0,demo:true,created:Date.now()};
+  const items=[];const add=(d,cat,amt,note='')=>items.push({id:uid(),d,cat,amt:Math.round(amt/5)*5,note,t:Date.now()});
+  const today=now.getDate();
+  for(let day=1;day<today;day++){
+    const d=ym+'-'+pad(day);
+    if(day===1)add(d,'house',8000,'নভেম্বরের বাসা ভাড়া');
+    if(day===2)add(d,'family',2500,'মা-কে বিকাশ');
+    if(day===5)add(d,'bill',1000,'বিদ্যুৎ + ইন্টারনেট');
+    add(d,'travel',60+r()*70,pick(['বাস','রিকশা + বাস','সিএনজি শেয়ার'],day));
+    add(d,'food',90+r()*120,'দুপুরের খাবার');
+    if(r()>.25)add(d,'tea',20+r()*40,'অফিসের পাশে চা');
+    if(r()>.3)add(d,'cig',30+r()*50,'');
+    if(r()>.8)add(d,'adda',150+r()*250,'বন্ধুদের সাথে');
+    if(day%7===3)add(d,'bazar',450+r()*300,'সাপ্তাহিক বাজার');
+    if(day%10===4)add(d,'mobile',149,'ইন্টারনেট প্যাক');
+  }
+  const t=todayStr();
+  add(t,'travel',80,'বাস');add(t,'tea',40,'সকালের চা');add(t,'cig',60,'');add(t,'food',150,'দুপুরের খাবার');add(t,'adda',100,'বিকালের আড্ডা');
+  await Store.set(acctKey(phone),acct);
+  await Store.set(monKey(phone,ym),{items});
+  enter(phone,acct);
+}
+
+/* ================= render app ================= */
+function render(){
+  if(!S.acct)return renderAuth();
+  renderTabbar();
+  const v=S.view;
+  if(v==='home')renderHome();else if(v==='report')renderReport();else if(v==='tips')renderTips();else renderSettings();
+}
+function renderTabbar(){
+  const tb=$('#tabbar');tb.hidden=false;
+  const t=(k,l)=>`<button class="tab" data-act="nav" data-v="${k}" ${S.view===k?'aria-current="page"':''}>${IC[k]}<span>${l}</span></button>`;
+  tb.innerHTML=`<nav aria-label="প্রধান মেনু">${t('home','হোম')}${t('report','হিসাব')}<button class="fab" data-act="add" aria-label="খরচ যোগ করুন">+</button>${t('tips','টিপস')}${t('settings','প্রোফাইল')}</nav>`;
+}
+function itemRow(i,showDate){
+  const c=CAT[i.cat]||CAT.other;const armed=S.armed===i.id;
+  const sub=[i.note?esc(i.note):'',showDate?new Date(i.d+'T00:00').toLocaleDateString('bn-BD',{day:'numeric',month:'short'}):''].filter(Boolean).join(' · ');
+  return `<div class="item"><div class="cat-dot" style="background:${c.c}">${c.g}</div>
+    <div class="name">${c.n}${c.fixed?'<span class="fixed-tag">মাসিক</span>':''}${sub?`<small>${sub}</small>`:''}</div>
+    <div class="amt num">${tk(i.amt)}</div>
+    <button class="del ${armed?'armed':''}" data-act="del" data-v="${i.id}" aria-label="মুছুন">${armed?'মুছবো?':'✕'}</button></div>`;
+}
+function renderHome(){
+  const a=S.acct,c=calc(a,S.cur,S.curYm),mood=moodOf(c),seed=hashStr(todayStr())+c.todayItems.length;
+  const remainToday=c.limit-c.todayFlex;
+  const dateLbl=new Date().toLocaleDateString('bn-BD',{weekday:'long',day:'numeric',month:'long'});
+  const bm=mood==='none'?'happy':mood;
+  const todayList=[...c.todayItems].sort((x,y)=>y.t-x.t);
+  const q=QUOTES[S.qi%QUOTES.length];
+  const noSalary=!c.income;
+  $('#root').innerHTML=`
+  <header class="top"><div class="who">${avatar(a,50)}<div><p class="hello">সালাম,</p><h1>${esc(a.name)}</h1></div></div><div class="datepill">${dateLbl}</div></header>
+  ${a.demo?'<div class="demo-banner">এটা ডেমো একাউন্ট, সব সংখ্যা উদাহরণ। নিজের হিসাব রাখতে প্রোফাইল থেকে লগ আউট করে নতুন একাউন্ট খুলুন।</div>':''}
+  ${noSalary?'<div class="demo-banner">আপনার মাসিক বেতন এখনো দেওয়া হয়নি। <b>প্রোফাইল</b> ট্যাবে গিয়ে বেতন দিন, তাহলে দৈনিক বাজেট হিসাব হবে।</div>':''}
+  <section class="card">
+    <div class="mood m-${mood}"><div>${mascot(mood)}</div><div class="bubble">${esc(msgFor(mood,c,seed))}</div></div>
+    <div class="meter">
+      <div class="meter-row"><span class="lbl">আজকের খরচ</span><strong class="num">${tk(c.todayFlex)}</strong><span class="of num">/ ${tk(c.limit)} লিমিট</span></div>
+      <div class="bar b-${bm}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(c.pct,1)*100)}"><i style="width:${Math.min(c.pct,1)*100}%"></i></div>
+      <p class="meter-note">${remainToday>=0?`আজ আর <b>${tk(remainToday)}</b> খরচ করতে পারবেন।`:`আজকের লিমিট <b style="color:var(--danger)">${tk(-remainToday)}</b> পার হয়ে গেছে।`} ${Number(a.dailyLimit)>0?'(আপনার সেট করা লিমিট)':'(মাসের বাজেট থেকে অটো হিসাব)'}</p>
+    </div>
+  </section>
+  <section class="card plan">
+    <p class="eyebrow">${monthName(S.curYm)} · মাস শেষ হতে ${bn(c.daysLeft)} দিন বাকি</p>
+    <p class="big">আজ থেকে প্রতিদিন <b class="num">${tk(c.perDay)}</b> করে খরচ করলে পুরো মাস চলবে</p>
+    <p class="sub">${c.savings?`${tk(c.savings)} সঞ্চয় আলাদা রেখে`:'সঞ্চয়ের লক্ষ্য দেওয়া নেই'}${c.remainingFixed?` · বাকি মাসিক খরচ ${tk(c.remainingFixed)} ধরে`:''}</p>
+    <div class="stats">
+      <div class="stat"><span>এই মাসের বেতন</span><strong class="num">${tk(c.income)}</strong></div>
+      <div class="stat"><span>মোট খরচ হয়েছে</span><strong class="num">${tk(c.spent)}</strong></div>
+      <div class="stat ${c.left>=0?'good':'bad'}"><span>হাতে আছে</span><strong class="num">${tk(c.left)}</strong></div>
+      <div class="stat ${c.projSave>=c.savings?'good':'bad'}"><span>এই হারে মাস শেষে বাঁচবে</span><strong class="num">${tk(c.projSave)}</strong></div>
+    </div>
+    ${c.income?(c.projSave>=c.savings?`<p class="alert-line good">এভাবে চললে সঞ্চয়ের লক্ষ্য পূরণ হবে। সাবাশ!</p>`:`<p class="alert-line bad">এই হারে চললে লক্ষ্যের চেয়ে ${tk(c.savings-c.projSave)} কম জমবে। দৈনিক খরচ একটু কমান।</p>`):''}
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>আজ কোথায় কত গেল</h2><span class="muted num">${tk(sum(c.todayItems))}</span></div>
+    <div class="list">${todayList.length?todayList.map(i=>itemRow(i)).join(''):'<p class="empty">আজ এখনো কিছু লেখা হয়নি। নিচের + বাটনে চাপ দিয়ে খরচ যোগ করুন।</p>'}</div>
+  </section>
+  <section class="quote"><p>“${q[0]}”</p><small>${q[1]}</small><button data-act="quote">আরেকটা</button></section>`;
+}
+
+/* ---------- report ---------- */
+async function loadRep(){
+  if(S.repYm===S.curYm){S.rep=S.cur;return}
+  try{S.rep=(await Store.get(monKey(S.phone,S.repYm)))||{items:[]}}
+  catch(e){console.error(e);toast(fbErr(e));S.rep={items:[]}}
+}
+function renderReport(){
+  const a=S.acct,data=S.repYm===S.curYm?S.cur:(S.rep||{items:[]});
+  const c=calc(a,data,S.repYm);
+  const byCat={};c.items.forEach(i=>byCat[i.cat]=(byCat[i.cat]||0)+Number(i.amt));
+  const cats=Object.entries(byCat).sort((x,y)=>y[1]-x[1]);
+  const maxCat=cats.length?cats[0][1]:1;
+  const byDay=Array.from({length:c.dim},()=>0);
+  c.items.forEach(i=>{if(!isFixed(i))byDay[Number(i.d.slice(8))-1]+=Number(i.amt)});
+  const lim=c.isCur?c.limit:(Number(a.dailyLimit)||c.suggested);
+  const top=Math.max(...byDay,lim,1)*1.1;
+  const todayD=new Date().getDate();
+  const cols=byDay.map((v,ix)=>{const day=ix+1;const fut=c.isCur&&day>todayD;const cls=[fut?'future':'',v>lim&&lim>0?'over':'',c.isCur&&day===todayD?'today':''].join(' ');
+    return `<div class="col ${cls}" title="${bn(day)} তারিখ: ${tk(v)}"><i style="height:${fut?0:(v/top*100)}%"></i></div>`}).join('');
+  const labels=byDay.map((_,ix)=>`<span>${(ix===0||(ix+1)%5===0)?bn(ix+1):''}</span>`).join('');
+  const groups={};[...c.items].sort((x,y)=>y.d.localeCompare(x.d)||y.t-x.t).forEach(i=>(groups[i.d]=groups[i.d]||[]).push(i));
+  const nextDisabled=S.repYm>=S.curYm;
+  const daysOver=byDay.filter((v,ix)=>lim>0&&v>lim&&!(c.isCur&&ix+1>todayD)).length;
+  $('#root').innerHTML=`
+  <div class="month-nav"><button class="icon-btn" data-act="mon" data-v="-1" aria-label="আগের মাস">‹</button><h2>${monthName(S.repYm)}</h2><button class="icon-btn" data-act="mon" data-v="1" aria-label="পরের মাস" ${nextDisabled?'disabled':''}>›</button></div>
+  <section class="card">
+    <div class="stats" style="margin-top:0">
+      <div class="stat"><span>বেতন</span><strong class="num">${tk(c.income)}</strong></div>
+      <div class="stat"><span>মোট খরচ</span><strong class="num">${tk(c.spent)}</strong></div>
+      <div class="stat ${c.left>=0?'good':'bad'}"><span>${c.isCur?'হাতে আছে':'মাস শেষে বাঁচল'}</span><strong class="num">${tk(c.left)}</strong></div>
+      <div class="stat"><span>দৈনিক গড় (মাসিক বাদে)</span><strong class="num">${tk(c.elapsed?c.flexSpent/c.elapsed:0)}</strong></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>কোন খাতে কত গেল</h2></div>
+    ${cats.length?`<div class="cat-bars">${cats.map(([k,v])=>{const ct=CAT[k]||CAT.other;return `<div class="cbar"><span>${ct.n}<span class="pct">${bn(v/c.spent*100)}%</span></span><b class="num">${tk(v)}</b><div class="track"><i style="width:${v/maxCat*100}%;background:${ct.c}"></i></div></div>`}).join('')}</div>`:'<p class="empty">এই মাসে কোনো খরচ লেখা নেই।</p>'}
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>প্রতিদিনের খরচ</h2><span class="muted" style="font-size:13px">${lim>0?`${bn(daysOver)} দিন লিমিট পার`:''}</span></div>
+    <div class="daychart">${cols}${lim>0?`<div class="limitline" style="bottom:${lim/top*100}%"><span>লিমিট ${tk(lim)}</span></div>`:''}</div>
+    <div class="daylabels">${labels}</div>
+    <div class="legend"><span><i style="background:var(--brand)"></i>লিমিটের মধ্যে</span><span><i style="background:var(--danger)"></i>লিমিট পার</span><span>বাসা ভাড়া, বিল ও বাড়িতে পাঠানো টাকা এখানে ধরা হয়নি</span></div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>সব খরচ</h2><span class="muted">${bn(c.items.length)}টি</span></div>
+    ${Object.keys(groups).length?Object.entries(groups).map(([d,arr])=>`<div class="day-group"><h3><span>${new Date(d+'T00:00').toLocaleDateString('bn-BD',{weekday:'short',day:'numeric',month:'long'})}</span><span class="num">${tk(sum(arr))}</span></h3><div class="list">${arr.map(i=>itemRow(i)).join('')}</div></div>`).join(''):'<p class="empty">কিছু নেই।</p>'}
+  </section>`;
+}
+
+/* ---------- tips ---------- */
+function buildTips(c){
+  const by={};c.items.forEach(i=>by[i.cat]=(by[i.cat]||0)+Number(i.amt));
+  const days=Math.max(1,c.elapsed), tips=[];
+  const perDayOf=k=>(by[k]||0)/days;
+  if(by.cig){const d=perDayOf('cig');tips.push({hot:1,g:'সি',h:`সিগারেটে এই মাসে ${tk(by.cig)} গেছে`,p:`মানে দিনে প্রায় ${tk(d)}। অর্ধেক কমালেই মাসে <b>${tk(d/2*30)}</b>, বছরে <b>${tk(d/2*365)}</b> বাঁচবে। শরীরও ধন্যবাদ দেবে।`})}
+  if(by.adda&&by.adda/c.spent>0.06){tips.push({hot:1,g:'আ',h:`আড্ডায় ${tk(by.adda)} খরচ`,p:`বন্ধুদের সাথে সময় কাটানো দরকার, তবে সপ্তাহে একদিন বাইরে আর বাকি দিন চায়ের দোকানে বসলে মাসে <b>${tk(by.adda*0.4)}</b> পর্যন্ত বাঁচতে পারে।`})}
+  if(by.tea){tips.push({g:'চা',h:`চা-নাস্তায় দিনে ${tk(perDayOf('tea'))}`,p:`অফিসে ফ্লাস্কে চা নিয়ে গেলে বা দিনে একবার কম খেলে মাসে <b>${tk(perDayOf('tea')*0.5*30)}</b> বাঁচে।`})}
+  if(by.food&&perDayOf('food')>120){tips.push({g:'খা',h:`বাইরের খাবারে দিনে ${tk(perDayOf('food'))}`,p:`সপ্তাহে ৩ দিন বাসা থেকে টিফিন নিলে মাসে প্রায় <b>${tk(perDayOf('food')*0.6*12)}</b> বাঁচবে।`})}
+  if(by.travel){tips.push({g:'যা',h:`যাতায়াতে দিনে ${tk(perDayOf('travel'))}`,p:`১-২ কিলোমিটার পথ হেঁটে যান, সিএনজি না নিয়ে বাসে যান, অফিসের সহকর্মীর সাথে রাইড শেয়ার করুন। দিনে ২০ টাকা বাঁচলেও মাসে <b>${tk(600)}</b>।`})}
+  if(by.mobile&&by.mobile>500){tips.push({g:'মো',h:`মোবাইল/নেটে ${tk(by.mobile)}`,p:'ছোট ছোট প্যাক না কিনে মাসিক বড় প্যাক নিন, বাসায় ওয়াই-ফাই থাকলে ডেটা কম কিনুন।'})}
+  if(by.shop){tips.push({g:'কে',h:`কেনাকাটায় ${tk(by.shop)}`,p:'কিছু কেনার আগে ২৪ ঘণ্টা অপেক্ষা করুন। পরদিনও দরকার মনে হলে তবেই কিনুন।'})}
+  tips.push({g:'১',h:'বেতন পেয়েই আগে সঞ্চয় সরিয়ে রাখুন',p:`বেতন আসার দিনই ${c.savings?tk(c.savings):'একটা নির্দিষ্ট অংশ'} আলাদা একাউন্টে বা ডিপিএস-এ রেখে দিন। যা থাকবে, শুধু সেটা দিয়ে মাস চালান।`});
+  tips.push({g:'২',h:'প্রতিদিন রাতে ২ মিনিট হিসাব লিখুন',p:'যে খরচ লেখা হয় না, সেটাই সবচেয়ে বেশি বাড়ে। ঘুমানোর আগে টাকুকে আজকের খরচগুলো জানিয়ে দিন।'});
+  tips.push({g:'৩',h:'সপ্তাহে একবার বাজার',p:'লিস্ট করে সপ্তাহে একদিন বাজার করলে প্রতিদিনের ছোট ছোট কেনাকাটা কমে যায়।'});
+  tips.push({g:'৪',h:'মানিব্যাগে দিনের লিমিটটুকুই রাখুন',p:`সকালে বের হওয়ার সময় শুধু ${tk(c.limit||c.suggested)} সাথে নিন। হাতে কম টাকা থাকলে খরচও কম হয়।`});
+  tips.push({g:'৫',h:'"নো-স্পেন্ড ডে" চ্যালেঞ্জ',p:'সপ্তাহে একদিন যাতায়াত ছাড়া এক টাকাও খরচ না করার চেষ্টা করুন। মাসে ৪ দিন মানে অনেক টাকা।'});
+  return tips;
+}
+function renderTips(){
+  const c=calc(S.acct,S.cur,S.curYm);const tips=buildTips(c);const q=QUOTES[S.qi%QUOTES.length];
+  $('#root').innerHTML=`
+  <header class="top"><div><p class="hello">আপনার খরচ দেখে</p><h1>টাকা বাঁচানোর টিপস</h1></div></header>
+  <section class="card">${tips.map(t=>`<div class="tip ${t.hot?'hot':''}"><div class="ico">${t.g}</div><div><h3>${t.h}</h3><p>${t.p}</p></div></div>`).join('')}</section>
+  <section class="quote"><p>“${q[0]}”</p><small>${q[1]}</small><button data-act="quote">আরেকটা</button></section>`;
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const a=S.acct,c=calc(a,S.cur,S.curYm);
+  $('#root').innerHTML=`
+  <header class="top"><div><p class="hello">প্রোফাইল</p><h1>${esc(a.name)}</h1></div><div class="datepill num">${String(a.phone).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d])}</div></header>
+  <section class="card set-list">
+    <div class="sec-head"><h2>প্রোফাইল ছবি</h2></div>
+    <div class="photo-row">${avatar(a,76)}<div class="photo-btns">
+      <label class="btn ghost" for="s-photo">${a.photo?'ছবি বদলান':'ছবি আপলোড করুন'}</label>
+      <input id="s-photo" type="file" accept="image/*" hidden>
+      ${a.photo?'<button class="btn danger" type="button" data-act="rmphoto">ছবি সরান</button>':''}
+    </div></div>
+    <p class="hint">গ্যালারি থেকে যেকোনো ছবি দিন, টাকু নিজেই গোল করে ছোট করে নেবে।</p>
+  </section>
+  <form class="card set-list" id="setForm" novalidate>
+    <div class="sec-head"><h2>মাসের বাজেট</h2></div>
+    <div class="field"><label for="s-name">নাম</label><input id="s-name" value="${esc(a.name)}"></div>
+    <div class="row2">
+      <div class="field"><label for="s-salary">মাসিক বেতন (৳)</label><input id="s-salary" inputmode="decimal" value="${a.salary||''}"></div>
+      <div class="field"><label for="s-income">এই মাসে পেয়েছি (৳)</label><input id="s-income" inputmode="decimal" placeholder="${a.salary||''}" value="${S.cur.income!=null?S.cur.income:''}"></div>
+    </div>
+    <p class="hint">এই মাসে বেতন কম-বেশি পেলে বা বোনাস পেলে "এই মাসে পেয়েছি" ঘরে লিখুন। খালি রাখলে মাসিক বেতনই ধরা হবে।</p>
+    <div class="row2">
+      <div class="field"><label for="s-save">মাসে জমাতে চাই (৳)</label><input id="s-save" inputmode="decimal" value="${a.savings||''}"></div>
+      <div class="field"><label for="s-fixed">মাসিক নির্দিষ্ট খরচ (৳)</label><input id="s-fixed" inputmode="decimal" value="${a.fixed||''}" placeholder="বাসা ভাড়া + বিল"></div>
+    </div>
+    <p class="hint">বাসা ভাড়া, বিল, বাড়িতে পাঠানো টাকা: মাসে একবার যায়, তাই দৈনিক লিমিটে ধরা হয় না।</p>
+    <div class="inline">
+      <div class="field"><label for="s-limit">দৈনিক খরচের লিমিট (৳)</label><input id="s-limit" inputmode="decimal" value="${a.dailyLimit||''}" placeholder="অটো: ${c.autoLimit}"></div>
+      <button class="btn ghost" type="button" data-act="suggest">সাজেস্ট ${tk(c.suggested)}</button>
+    </div>
+    <p class="hint">খালি রাখলে টাকু নিজেই হিসাব করবে: বাকি টাকা ÷ বাকি দিন। এখন অটো লিমিট ${tk(c.autoLimit)}।</p>
+    <p class="err" id="setErr"></p>
+    <button class="btn block" type="submit">সেভ করুন</button>
+  </form>
+  <section class="card set-list">
+    <div class="sec-head"><h2>একাউন্ট</h2></div>
+    <p class="store-note">${storeNote(false)}</p>
+    <button class="btn danger block" data-act="resetmonth">${S.armed==='reset'?'নিশ্চিত? এই মাসের সব খরচ মুছে যাবে':'এই মাসের সব খরচ মুছুন'}</button>
+    <button class="btn ghost block" data-act="logout">লগ আউট</button>
+  </section>`;
+}
+async function onSettingsSubmit(e){
+  e.preventDefault();
+  const n=id=>{const v=toEn($(id).value);return v===''?null:Number(v)};
+  const err=$('#setErr');
+  const vals={salary:n('#s-salary'),income:n('#s-income'),savings:n('#s-save'),fixed:n('#s-fixed'),limit:n('#s-limit')};
+  if(Object.values(vals).some(v=>v!=null&&(isNaN(v)||v<0))){err.textContent='শুধু সংখ্যা লিখুন।';return}
+  const name=$('#s-name').value.trim();if(!name){err.textContent='নাম খালি রাখা যাবে না।';return}
+  Object.assign(S.acct,{name,salary:vals.salary||0,savings:vals.savings||0,fixed:vals.fixed||0,dailyLimit:vals.limit||0});
+  if(vals.income==null)delete S.cur.income;else S.cur.income=vals.income;
+  await Promise.all([Store.set(acctKey(S.phone),S.acct),Store.set(monKey(S.phone,S.curYm),S.cur)]);
+  toast('সেভ হয়েছে');renderSettings();
+}
+
+/* ---------- add sheet ---------- */
+function openAdd(){
+  S.draft={amt:'',cat:'travel',note:'',d:todayStr()};
+  drawAdd();
+}
+function drawAdd(){
+  const d=S.draft;
+  $('#layer').innerHTML=`<div class="overlay" data-act="closebg"><form class="sheet" id="addForm" novalidate role="dialog" aria-modal="true" aria-label="খরচ যোগ করুন">
+    <div class="sheet-head"><h2>নতুন খরচ</h2><button type="button" class="icon-btn" data-act="close" aria-label="বন্ধ করুন">✕</button></div>
+    <div class="amount-in"><span>৳</span><input id="a-amt" inputmode="decimal" placeholder="০" value="${esc(d.amt)}" aria-label="টাকার পরিমাণ"></div>
+    <div class="chips">${[10,20,50,100,200,500].map(v=>`<button type="button" class="chip" data-act="quick" data-v="${v}">+${bn(v)}</button>`).join('')}</div>
+    <div class="catgrid" role="group" aria-label="খাত">${CATS.map(c=>`<button type="button" class="catbtn" data-act="cat" data-v="${c.k}" aria-pressed="${d.cat===c.k}"><span class="cat-dot" style="background:${c.c}">${c.g}</span>${c.n}</button>`).join('')}</div>
+    <div class="row2">
+      <div class="field"><label for="a-note">নোট (ঐচ্ছিক)</label><input id="a-note" placeholder="যেমন: অফিসে যাওয়ার বাস" value="${esc(d.note)}"></div>
+      <div class="field"><label for="a-date">তারিখ</label><input id="a-date" type="date" value="${d.d}" max="${todayStr()}"></div>
+    </div>
+    <p class="err" id="addErr"></p>
+    <button class="btn block" type="submit" style="padding:14px;font-size:16px">খাতায় লিখে রাখুন</button>
+  </form></div>`;
+  setTimeout(()=>{const i=$('#a-amt');i&&i.focus()},50);
+}
+function syncDraft(){if(!S.draft||!$('#a-amt'))return;S.draft.amt=$('#a-amt').value;S.draft.note=$('#a-note').value;S.draft.d=$('#a-date').value||todayStr()}
+async function onAddSubmit(e){
+  e.preventDefault();syncDraft();
+  const amt=Number(toEn(S.draft.amt));
+  if(!amt||amt<=0){$('#addErr').textContent='টাকার পরিমাণ লিখুন।';return}
+  const d=S.draft.d;if(d>todayStr()){$('#addErr').textContent='ভবিষ্যতের তারিখে খরচ লেখা যাবে না।';return}
+  const ym=d.slice(0,7);
+  const item={id:uid(),d,cat:S.draft.cat,amt,note:S.draft.note.trim().slice(0,80),t:Date.now()};
+  const before=calc(S.acct,S.cur,S.curYm);
+  if(ym===S.curYm){S.cur.items.push(item);await Store.set(monKey(S.phone,ym),S.cur)}
+  else{let m;try{m=(await Store.get(monKey(S.phone,ym)))||{items:[]}}catch(err){$('#addErr').textContent=fbErr(err);return}m.items=m.items||[];m.items.push(item);await Store.set(monKey(S.phone,ym),m);if(S.repYm===ym)S.rep=m}
+  S.draft=null;$('#layer').innerHTML='';
+  const after=calc(S.acct,S.cur,S.curYm);
+  render();
+  if(d!==todayStr()){toast(tk(amt)+' লেখা হয়েছে');return}
+  reactTo(before,after,item);
+}
+function reactTo(b,a,item){
+  const crossed=th=>b.pct<th&&a.pct>=th;
+  let mood=null,title='';
+  if(!isFixed(item)&&a.limit>0&&a.pct>=1&&(crossed(1)||b.pct>=1)){mood='furious';title=b.pct>=1?'আবার খরচ?!':'লিমিট শেষ!'}
+  else if(!isFixed(item)&&crossed(0.9)){mood='angry';title='থামো একটু!'}
+  else if(!isFixed(item)&&crossed(0.75)){mood='worried';title='সাবধান!'}
+  else if(item.cat==='cig'&&Math.random()<0.6){mood='angry';title='আবার সিগারেট!';return showPop(mood,title,pick(MSG.cig,Date.now()))}
+  if(!mood){toast(tk(item.amt)+' খাতায় লেখা হলো');return}
+  showPop(mood,title,msgFor(mood,a,Date.now()));
+}
+function showPop(mood,title,msg){
+  $('#layer').innerHTML=`<div class="overlay center" data-act="closebg"><div class="pop p-${mood}" role="alertdialog" aria-modal="true" aria-labelledby="popT">
+    <div class="mwrap">${mascot(mood)}</div><h2 id="popT">${title}</h2><p>${esc(msg)}</p>
+    <button class="btn block" data-act="close">আচ্ছা টাকু, কমাবো</button></div></div>`;
+}
+
+/* ================= events ================= */
+document.addEventListener('submit',e=>{
+  if(e.target.id==='authForm')onAuthSubmit(e);
+  else if(e.target.id==='addForm')onAddSubmit(e);
+  else if(e.target.id==='setForm')onSettingsSubmit(e);
+});
+document.addEventListener('change',async e=>{
+  if(e.target.id!=='s-photo'||!S.acct)return;
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{S.acct.photo=await readPhoto(f);await Store.set(acctKey(S.phone),S.acct);toast('ছবি সেভ হয়েছে');renderSettings()}
+  catch(err){toast(err==='type'?'শুধু ছবি ফাইল দিন (JPG/PNG)।':'ছবিটা খোলা গেল না, অন্য ছবি দিন।')}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#layer').innerHTML){S.draft=null;$('#layer').innerHTML=''}});
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act,v=el.dataset.v;
+  if(act==='closebg'&&e.target!==el)return;
+  if(act!=='del'&&act!=='resetmonth'&&S.armed){const was=S.armed;S.armed=null;if(was&&S.acct&&!$('#layer').innerHTML)render()}
+  switch(act){
+    case 'authtab':S.authTab=v;renderAuth();break;
+    case 'demo':Store.forceLocal=Store.mode==='fb'||Store.mode==='fbfail';el.disabled=true;el.textContent='তৈরি হচ্ছে...';await makeDemo();break;
+    case 'nav':S.view=v;if(v==='report'){S.repYm=S.curYm;await loadRep()}render();window.scrollTo(0,0);break;
+    case 'add':openAdd();break;
+    case 'close':case 'closebg':S.draft=null;$('#layer').innerHTML='';break;
+    case 'quick':{syncDraft();S.draft.amt=String((Number(toEn(S.draft.amt))||0)+Number(v));$('#a-amt').value=S.draft.amt;break}
+    case 'cat':syncDraft();S.draft.cat=v;document.querySelectorAll('.catbtn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));break;
+    case 'quote':S.qi++;render();break;
+    case 'mon':S.repYm=shiftYm(S.repYm,Number(v));if(S.repYm>S.curYm)S.repYm=S.curYm;await loadRep();renderReport();break;
+    case 'del':{
+      if(S.armed!==v){S.armed=v;render();break}
+      S.armed=null;
+      const inCur=S.cur.items.some(i=>i.id===v);
+      if(inCur){S.cur.items=S.cur.items.filter(i=>i.id!==v);await Store.set(monKey(S.phone,S.curYm),S.cur)}
+      else if(S.rep){S.rep.items=S.rep.items.filter(i=>i.id!==v);await Store.set(monKey(S.phone,S.repYm),S.rep)}
+      toast('মুছে ফেলা হয়েছে');render();break}
+    case 'rmphoto':delete S.acct.photo;await Store.set(acctKey(S.phone),S.acct);toast('ছবি সরানো হয়েছে');renderSettings();break;
+    case 'suggest':{const c=calc(S.acct,S.cur,S.curYm);$('#s-limit').value=c.suggested;break}
+    case 'resetmonth':
+      if(S.armed!=='reset'){S.armed='reset';renderSettings();break}
+      S.armed=null;S.cur={items:[],...(S.cur.income!=null?{income:S.cur.income}:{})};await Store.set(monKey(S.phone,S.curYm),S.cur);toast('এই মাসের খরচ মুছে ফেলা হয়েছে');renderSettings();break;
+    case 'logout':if(Store.m==='fb')Store.auth.signOut().catch(()=>{});Store.forceLocal=false;LS.del('session');S.acct=null;S.phone=null;S.cur=null;S.authTab='login';S.view='home';renderAuth();window.scrollTo(0,0);break;
+  }
+});
+
+/* ================= boot ================= */
+(async function boot(){
+  $('#root').innerHTML=`<div style="padding:60px 0;text-align:center"><div style="width:90px;margin:0 auto">${mascot('happy')}</div><p class="muted" style="margin-top:10px">টাকু খাতা খুলছে...</p></div>`;
+  await Store.init();
+  if(Store.mode==='fb'){
+    const u=await new Promise(res=>{const un=Store.auth.onAuthStateChanged(x=>{un();res(x)})});
+    if(u){
+      const phone=String(u.email||'').split('@')[0];
+      try{const a=await Store.get(acctKey(phone));if(a)return enter(phone,a)}catch(e){console.error(e)}
+    }
+    return renderAuth();
+  }
+  if(Store.mode==='fbfail')return renderAuth(storeNote());
+  const p=LS.get('session');
+  if(p){const a=await Store.get(acctKey(p));if(a)return enter(p,a)}
+  renderAuth();
+})();
+</script>
+
+</body>
+</html>
